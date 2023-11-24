@@ -1,7 +1,7 @@
 {
   "server": {
     "server": ":8089",
-    "from_block": 0
+    "from_block": 4978257
   },
   "sqlite": {
     "database": "data/unielon-indexer.db"
