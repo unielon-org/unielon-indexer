@@ -1,0 +1,16 @@
+{
+  "server": {
+    "server": ":8089",
+    "from_block": 0
+  },
+  "sqlite": {
+    "database": "data/unielon-indexer.db"
+  },
+  "chain": {
+    "chain_name": "dogecoin",
+    "rpc": "127.0.0.1:22555",
+    "user_name": "admin",
+    "pass_word": "admin"
+  },
+  "debug_level": 4
+}
