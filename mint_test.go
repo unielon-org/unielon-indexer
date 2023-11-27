@@ -18,8 +18,9 @@ const (
 	baseAmount = 100000
 )
 
-// DFUQLPRz7Fc9v37s3XZUwtMgcLBiXKVgPR transfer 100000000 to DFUQLPRz7Fc9v37s3XZUwtMgcLBiXKVgPR
+// DFUQLPRz7Fc9v37s3XZUwtMgcLBiXKVgPR transfer WDOGE(WRAPPED-DOGE) 100000000 to DTZSTXecLmSXpRGSfht4tAMyqra1wsL7xb
 // WIF: QRJx7uvj55L3oVRADWJfFjJ31H9Beg75xZ2GcmR8rKFNHA4ZacKJ
+// p2kh-add: DJu5mMUKprfnyBhot2fqCsW9sZCsfdfcrZ
 // addr:  9vQLNwYnR1BEpRiCXjyyPnA79hWcoDQREK
 func TestCreateAddress(t *testing.T) {
 
@@ -110,7 +111,7 @@ func TestSend(t *testing.T) {
 	redeemTx.AddTxIn(txIn)
 
 	// adding the output to tx,
-	decodedAddr, err := btcutil.DecodeAddress("DFUQLPRz7Fc9v37s3XZUwtMgcLBiXKVgPR", &chaincfg.MainNetParams)
+	decodedAddr, err := btcutil.DecodeAddress("DTZSTXecLmSXpRGSfht4tAMyqra1wsL7xb", &chaincfg.MainNetParams)
 	if err != nil {
 		fmt.Println("generate decode addr ")
 		log.Fatal(err)
