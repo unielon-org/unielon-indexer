@@ -18,7 +18,7 @@ const (
 	baseAmount = 100000
 )
 
-// test
+// DFUQLPRz7Fc9v37s3XZUwtMgcLBiXKVgPR transfer 100000000 to DFUQLPRz7Fc9v37s3XZUwtMgcLBiXKVgPR
 // WIF: QRJx7uvj55L3oVRADWJfFjJ31H9Beg75xZ2GcmR8rKFNHA4ZacKJ
 // addr:  9vQLNwYnR1BEpRiCXjyyPnA79hWcoDQREK
 func TestCreateAddress(t *testing.T) {
