@@ -208,9 +208,9 @@ func (r *Router) FindOrders(c *gin.Context) {
 
 func (r *Router) FindOrdersByNumber(c *gin.Context) {
 	type params struct {
-		ReceiveAddress string `json:"receive_address"`
-		Limit          int64  `json:"limit"`
-		OffSet         int64  `json:"offset"`
+		Number int64 `json:"number"`
+		Limit  int64 `json:"limit"`
+		OffSet int64 `json:"offset"`
 	}
 
 	p := &params{
@@ -230,13 +230,11 @@ func (r *Router) FindOrdersByNumber(c *gin.Context) {
 		p.Limit = 50
 	}
 
-	_, err := btcutil.DecodeAddress(p.ReceiveAddress, &chaincfg.MainNetParams)
+	orders, total, err := r.dbc.FindOrdersByNumber(p.Number, p.Limit, p.OffSet)
 	if err != nil {
-		log.Error("Router", "FindOrders", fmt.Sprintf("btcutil.DecodeAddress is err:%s", err.Error()))
 		c.JSON(http.StatusInternalServerError, nil)
 		return
 	}
-	orders, total, err := r.dbc.FindOrders(p.ReceiveAddress, p.Limit, p.OffSet)
 
 	result := &utils.HttpResult{}
 	result.Code = 200
