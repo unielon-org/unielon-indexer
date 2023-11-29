@@ -168,9 +168,47 @@ func (r *Router) FindDrc20ByAddressTick(c *gin.Context) {
 
 func (r *Router) FindOrders(c *gin.Context) {
 	type params struct {
-		OrderId        string `json:"order_id"`
 		ReceiveAddress string `json:"receive_address"`
-		Tick           string `json:"tick"`
+		Limit          int64  `json:"limit"`
+		OffSet         int64  `json:"offset"`
+	}
+
+	p := &params{
+		Limit:  50,
+		OffSet: 0,
+	}
+
+	if err := c.ShouldBindJSON(&p); err != nil {
+		result := &utils.HttpResult{}
+		result.Code = 500
+		result.Msg = err.Error()
+		c.JSON(http.StatusOK, result)
+		return
+	}
+
+	if p.Limit > 50 {
+		p.Limit = 50
+	}
+
+	_, err := btcutil.DecodeAddress(p.ReceiveAddress, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Error("Router", "FindOrders", fmt.Sprintf("btcutil.DecodeAddress is err:%s", err.Error()))
+		c.JSON(http.StatusInternalServerError, nil)
+		return
+	}
+	orders, total, err := r.dbc.FindOrders(p.ReceiveAddress, p.Limit, p.OffSet)
+
+	result := &utils.HttpResult{}
+	result.Code = 200
+	result.Msg = "success"
+	result.Data = orders
+	result.Total = total
+	c.JSON(http.StatusOK, result)
+}
+
+func (r *Router) FindOrdersByNumber(c *gin.Context) {
+	type params struct {
+		ReceiveAddress string `json:"receive_address"`
 		Limit          int64  `json:"limit"`
 		OffSet         int64  `json:"offset"`
 	}

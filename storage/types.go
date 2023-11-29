@@ -39,27 +39,27 @@ type FindDrc20HoldersResult struct {
 }
 
 type OrderResult struct {
-	OrderId            string   `json:"order_id"`
-	P                  string   `json:"p"`
-	Op                 string   `json:"op"`
-	Tick               string   `json:"tick"`
-	Amt                *big.Int `json:"amt"`
-	Max                *big.Int `json:"max"`
-	Lim                *big.Int `json:"lim"`
-	Dec                int64    `json:"dec"`
-	Burn               string   `json:"burn"`
-	Func               string   `json:"func"`
-	RateFee            *big.Int `json:"rate_fee"`
-	Repeat             int64    `json:"repeat"`
-	FeeTxHash          string   `json:"fee_tx_hash"`
-	Drc20TxHash        string   `json:"drc20_tx_hash"`
-	BlockHash          string   `json:"block_hash"`
-	BlockConfirmations uint64   `json:"block_confirmations"`
-	ReceiveAddress     string   `json:"receive_address"`
-	ToAddress          string   `json:"to_address"`
-	FeeAddress         string   `json:"fee_address"`
-	OrderStatus        int64    `json:"order_status"`
-	CreateDate         string   `json:"create_date"`
+	OrderId        string   `json:"order_id"`
+	P              string   `json:"p"`
+	Op             string   `json:"op"`
+	Tick           string   `json:"tick"`
+	Amt            *big.Int `json:"amt"`
+	Max            *big.Int `json:"max"`
+	Lim            *big.Int `json:"lim"`
+	Dec            int64    `json:"dec"`
+	Burn           string   `json:"burn"`
+	Func           string   `json:"func"`
+	RateFee        *big.Int `json:"rate_fee"`
+	Repeat         int64    `json:"repeat"`
+	FeeTxHash      string   `json:"fee_tx_hash"`
+	Drc20TxHash    string   `json:"drc20_tx_hash"`
+	BlockHash      string   `json:"block_hash"`
+	BlockNumber    string   `json:"block_number"`
+	ReceiveAddress string   `json:"receive_address"`
+	ToAddress      string   `json:"to_address"`
+	FeeAddress     string   `json:"fee_address"`
+	OrderStatus    int64    `json:"order_status"`
+	CreateDate     string   `json:"create_date"`
 }
 
 type SwapPrice struct {

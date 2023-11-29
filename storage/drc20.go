@@ -631,7 +631,7 @@ func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*Fin
 }
 
 func (c *DBClient) FindOrders(receiveAddress string, limit, offset int64) ([]*OrderResult, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,receive_address,  rate_fee, fee_tx_hash,  drc20_tx_hash, block_hash, repeat_mint, block_confirmations, create_date, order_status, to_address  FROM cardinals_info where receive_address = ? or to_address = ?  order by update_date desc LIMIT ? OFFSET ?"
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,receive_address,  rate_fee, fee_tx_hash,  drc20_tx_hash, block_hash, repeat_mint,  create_date, order_status, to_address  FROM cardinals_info where receive_address = ? or to_address = ?  order by update_date desc LIMIT ? OFFSET ?"
 
 	rows, err := c.SqlDB.Query(query, receiveAddress, receiveAddress, limit, offset)
 	if err != nil {
@@ -647,7 +647,7 @@ func (c *DBClient) FindOrders(receiveAddress string, limit, offset int64) ([]*Or
 		var amt *string
 		var fee *string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &fee, &card.FeeTxHash, &card.Drc20TxHash, &card.BlockHash, &card.Repeat, &card.BlockConfirmations, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &fee, &card.FeeTxHash, &card.Drc20TxHash, &card.BlockHash, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -663,6 +663,49 @@ func (c *DBClient) FindOrders(receiveAddress string, limit, offset int64) ([]*Or
 	query1 := "SELECT count(order_id)  FROM cardinals_info where receive_address = ? and is_del = 0"
 
 	rows1, err := c.SqlDB.Query(query1, receiveAddress)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	defer rows1.Close()
+	total := int64(0)
+	if rows1.Next() {
+		rows1.Scan(&total)
+	}
+
+	return cards, total, nil
+}
+
+func (c *DBClient) FindOrdersByNumber(number int64, limit, offset int64) ([]*OrderResult, int64, error) {
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, receive_address, drc20_tx_hash, block_hash, block_number, repeat_mint, to_address, order_status, create_date  FROM cardinals_info where block_number=?  order by update_date desc LIMIT ? OFFSET ?"
+	rows, err := c.SqlDB.Query(query, number, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	defer rows.Close()
+	var cards []*OrderResult
+	for rows.Next() {
+		card := &OrderResult{}
+		var max *string
+		var lim *string
+		var amt *string
+
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.ReceiveAddress, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.ToAddress, &card.OrderStatus, &card.CreateDate)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		card.Max, _ = utils.ConvetStr(*max)
+		card.Amt, _ = utils.ConvetStr(*amt)
+		card.Lim, _ = utils.ConvetStr(*lim)
+
+		cards = append(cards, card)
+	}
+
+	query1 := "SELECT count(order_id)  FROM cardinals_info where  block_number = ? and is_del = 0"
+
+	rows1, err := c.SqlDB.Query(query1, number)
 	if err != nil {
 		return nil, 0, err
 	}

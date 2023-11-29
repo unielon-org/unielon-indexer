@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/dogecoinw/doged/btcec"
 	"github.com/dogecoinw/doged/btcutil"
 	"github.com/dogecoinw/doged/chaincfg"
 	"github.com/dogecoinw/doged/chaincfg/chainhash"
@@ -27,9 +28,14 @@ const (
 // p2kh-add: DJu5mMUKprfnyBhot2fqCsW9sZCsfdfcrZ
 func TestCreateAddress(t *testing.T) {
 
-	// craete a new private key
-	//key, _ := btcec.NewPrivateKey()
-	//wif, _ := btcutil.NewWIF(key, &chaincfg.MainNetParams, true)
+	//craete a new private key
+	key, _ := btcec.NewPrivateKey()
+	wif, _ := btcutil.NewWIF(key, &chaincfg.MainNetParams, true)
+	fmt.Println("WIF: ", wif.String())
+
+	//create a new address
+	addr1, _ := btcutil.NewAddressPubKeyHash(btcutil.Hash160(wif.PrivKey.PubKey().SerializeCompressed()), &chaincfg.MainNetParams)
+	fmt.Println("p2kh-add: ", addr1.EncodeAddress())
 
 	wifStr1 := "QRJx7uvj55L3oVRADWJfFjJ31H9Beg75xZ2GcmR8rKFNHA4ZacKJ"
 	wif, err := btcutil.DecodeWIF(wifStr1)
