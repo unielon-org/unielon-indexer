@@ -162,7 +162,7 @@ func TestMintDeploy(t *testing.T) {
 	utxoIndex := uint32(0)
 	to := "DTZSTXecLmSXpRGSfht4tAMyqra1wsL7xb"
 
-	repeat := 30 // Multiples of mint, up to 30
+	repeat := int64(30) // Multiples of mint, up to 30
 
 	wifStr1 := "QRJx7uvj55L3oVRADWJfFjJ31H9Beg75xZ2GcmR8rKFNHA4ZacKJ"
 	wif, err := btcutil.DecodeWIF(wifStr1)
@@ -219,15 +219,15 @@ func TestMintDeploy(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	// to address
-	out0 := wire.NewTxOut(baseAmount, toAddrByte)
-	redeemTx.AddTxOut(out0)
-
 	baseFee := int64(50000000)
 	if data["op"] == "deploy" {
 		repeat = 1
 		baseFee = 10000000000
 	}
+
+	// to address
+	out0 := wire.NewTxOut(baseAmount*repeat, toAddrByte)
+	redeemTx.AddTxOut(out0)
 
 	decodedAddrFee, _ := btcutil.DecodeAddress(feeAddress, &chaincfg.MainNetParams)
 	destinationAddrByteFee, err := txscript.PayToAddrScript(decodedAddrFee)
@@ -236,7 +236,7 @@ func TestMintDeploy(t *testing.T) {
 	}
 
 	// fee address
-	redeemTxOut := wire.NewTxOut(baseFee*int64(repeat), destinationAddrByteFee)
+	redeemTxOut := wire.NewTxOut(baseFee*repeat, destinationAddrByteFee)
 	redeemTx.AddTxOut(redeemTxOut)
 
 	// signing the tx
