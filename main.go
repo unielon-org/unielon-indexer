@@ -104,11 +104,12 @@ func main() {
 			panic(err)
 		}
 
+	out:
 		for {
 			select {
 			case <-ctx.Done():
-				log.Info("router", "Stop", "Done")
-				break
+				log.Warn("router", "Stop", "Done")
+				break out
 			}
 		}
 		wg.Add(-1)

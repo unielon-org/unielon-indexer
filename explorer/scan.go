@@ -72,7 +72,7 @@ out:
 				log.Error("explorer", "Start", err.Error())
 			}
 		case <-e.ctx.Done():
-			log.Info("explorer", "Stop", "Done")
+			log.Warn("explorer", "Stop", "Done")
 			break out
 		}
 	}
