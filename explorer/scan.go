@@ -111,13 +111,13 @@ func (e *Explorer) scan() error {
 			txhash, _ := chainhash.NewHashFromStr(tx)
 			transactionVerbose, err := e.node.GetRawTransactionVerboseBool(txhash)
 			if err != nil {
-				log.Error("scanning", "GetRawTransactionVerboseBool", err)
+				log.Error("scanning", "GetRawTransactionVerboseBool", err, "txhash", transactionVerbose.Txid)
 				return err
 			}
 
 			decode, pushedData, err := e.reDecode(transactionVerbose)
 			if err != nil {
-				log.Trace("scanning", "verifyReDecode", err)
+				log.Trace("scanning", "verifyReDecode", err, "txhash", transactionVerbose.Txid)
 				continue
 			}
 
@@ -125,43 +125,43 @@ func (e *Explorer) scan() error {
 
 				card, err := e.drc20Decode(transactionVerbose, pushedData, e.fromBlock)
 				if err != nil {
+					log.Error("scanning", "drc20Decode", err, "txhash", transactionVerbose.Txid)
 					e.dbc.UpdateCardinalsInfoNewErrInfo(card.OrderId, err.Error())
-					log.Error("scanning", "drc20Decode", err)
 					continue
 				}
 
 				err = e.verify.VerifyDrc20(card)
 				if err != nil {
+					log.Error("scanning", "VerifyDrc20", err, "txhash", transactionVerbose.Txid)
 					e.dbc.UpdateCardinalsInfoNewErrInfo(card.OrderId, err.Error())
-					log.Error("scanning", "VerifyDrc20", err, "Order", card.OrderId)
 					continue
 				}
 
 				card.BlockHash = blockHash.String()
 				err = e.deployOrMintOrTransfer(card, e.fromBlock)
 				if err != nil {
+					log.Error("scanning", "deployOrMintOrTransfer", err, "txhash", transactionVerbose.Txid)
 					e.dbc.UpdateCardinalsInfoNewErrInfo(card.OrderId, err.Error())
-					log.Error("scanning", "deployOrMintOrTransfer", err, "Order", card.OrderId, "txhash", card.Drc20TxHash)
 					continue
 				}
 			} else if decode.P == "pair-v1" {
 				swap, err := e.swapDecode(transactionVerbose, pushedData, e.fromBlock)
 				if err != nil {
-					log.Error("scanning", "swapDecode", err)
+					log.Error("scanning", "swapDecode", err, "txhash", transactionVerbose.Txid)
 					continue
 				}
 
 				err = e.verify.VerifySwap(swap)
 				if err != nil {
-					log.Error("scanning", "VerifySwap", err, "Order", swap.OrderId)
+					log.Error("scanning", "VerifySwap", err, "txhash", transactionVerbose.Txid)
 					continue
 				}
 
 				if swap.Op == "create" || swap.Op == "add" {
 					err = e.swapCreateOrAdd(swap)
 					if err != nil {
+						log.Error("scanning", "swapCreateOrAdd", err, "txhash", transactionVerbose.Txid)
 						e.dbc.UpdateSwapInfoErr(swap.OrderId, err.Error())
-						log.Error("scanning", "swapCreateOrAdd", err, "Order", swap.OrderId, "txhash", swap.SwapTxHash)
 						continue
 					}
 				}
@@ -169,22 +169,21 @@ func (e *Explorer) scan() error {
 				if swap.Op == "remove" {
 					err = e.swapRemove(swap)
 					if err != nil {
+						log.Error("scanning", "swapRemove", err, "txhash", transactionVerbose.Txid)
 						e.dbc.UpdateSwapInfoErr(swap.OrderId, err.Error())
-						log.Error("scanning", "swapRemove", err, "Order", swap.OrderId, "txhash", swap.SwapTxHash)
 						continue
 					}
 				}
 
 				if swap.Op == "swap" {
 					if err = e.swapNow(swap); err != nil {
+						log.Error("scanning", "swapNow", err, "txhash", transactionVerbose.Txid)
 						e.dbc.UpdateSwapInfoErr(swap.OrderId, err.Error())
-						log.Error("scanning", "swapNow", err, "Order", swap.OrderId, "txhash", swap.SwapTxHash)
 						continue
 					}
 				}
 
 			} else if decode.P == "wdoge" {
-
 				wdoge, err := e.wdogeDecode(transactionVerbose, pushedData, e.fromBlock)
 				if err != nil {
 					log.Error("scanning", "wdogeDecode", err, "txhash", transactionVerbose.Txid)
