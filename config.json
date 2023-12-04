@@ -1,6 +1,6 @@
 {
   "server": {
-    "server": ":8089",
+    "port": ":8089",
     "from_block": 4978257
   },
   "sqlite": {
