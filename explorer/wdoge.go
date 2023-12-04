@@ -19,16 +19,16 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 
 	wdoge, err := utils.ConvertWDoge(param)
 	if err != nil {
-		return nil, fmt.Errorf("ConvetSwap err: %s", err.Error())
+		return nil, fmt.Errorf("ConvertWDoge err: %s", err.Error())
 	}
 
-	if len(tx.Vout) > 0 {
-		return nil, fmt.Errorf("mint op error, vout length is not 0")
+	if len(tx.Vout) < 1 {
+		return nil, fmt.Errorf("op error, vout length is not 0")
 	}
 
 	if wdoge.Op == "deposit" {
 		if len(tx.Vout) != 3 {
-			return nil, fmt.Errorf("mint op error, vout length is not 3")
+			return nil, fmt.Errorf("op error, vout length is not 3")
 		}
 
 		fee := int64(0)
