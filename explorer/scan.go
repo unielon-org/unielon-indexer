@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	startInterval = 3 * time.Second
+	startInterval = 1 * time.Second
 
 	wdogeFeeAddress  = "D86Dc4n49LZDiXvB41ds2XaDAP1BFjP1qy"
 	wdogeCoolAddress = "DKMyk8cfSTGfnCVXfmo8gXta9F6gziu7Z5"
