@@ -97,23 +97,10 @@ func main() {
 	router.POST("/v3/wdoge/order", rt.WDogeInfo)
 
 	// Start the HTTP server and listen on the port
-	wg.Add(1)
-	go func() {
-		err := router.Run(cfg.Server.Port)
-		if err != nil {
-			panic(err)
-		}
-
-	out:
-		for {
-			select {
-			case <-ctx.Done():
-				log.Warn("router", "Stop", "Done")
-				break out
-			}
-		}
-		wg.Add(-1)
-	}()
+	err := router.Run(cfg.Server.Port)
+	if err != nil {
+		panic(err)
+	}
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
