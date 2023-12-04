@@ -85,8 +85,8 @@ func (e *Explorer) scan() error {
 		return fmt.Errorf("scan GetBlockCount err: %s", err.Error())
 	}
 
-	if blockCount-e.fromBlock > 10 {
-		blockCount = e.fromBlock + 10
+	if blockCount-e.fromBlock > 100 {
+		blockCount = e.fromBlock + 100
 	}
 
 	for ; e.fromBlock < blockCount; e.fromBlock++ {
@@ -188,7 +188,6 @@ func (e *Explorer) scan() error {
 				wdoge, err := e.wdogeDecode(transactionVerbose, pushedData, e.fromBlock)
 				if err != nil {
 					log.Error("scanning", "wdogeDecode", err, "txhash", transactionVerbose.Txid)
-
 					continue
 				}
 

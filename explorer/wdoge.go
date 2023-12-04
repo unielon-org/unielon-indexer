@@ -23,12 +23,12 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	}
 
 	if len(tx.Vout) > 0 {
-		return nil, fmt.Errorf("mint op error, vout length is not 2")
+		return nil, fmt.Errorf("mint op error, vout length is not 0")
 	}
 
 	if wdoge.Op == "deposit" {
 		if len(tx.Vout) != 3 {
-			return nil, fmt.Errorf("mint op error, vout length is not 2")
+			return nil, fmt.Errorf("mint op error, vout length is not 3")
 		}
 
 		fee := int64(0)
