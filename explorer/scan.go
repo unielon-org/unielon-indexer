@@ -85,8 +85,8 @@ func (e *Explorer) scan() error {
 		return fmt.Errorf("scan GetBlockCount err: %s", err.Error())
 	}
 
-	if blockCount-e.fromBlock > 100 {
-		blockCount = e.fromBlock + 100
+	if blockCount-e.fromBlock > 10 {
+		blockCount = e.fromBlock + 10
 	}
 
 	for ; e.fromBlock < blockCount; e.fromBlock++ {
