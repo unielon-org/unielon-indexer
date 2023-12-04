@@ -126,7 +126,6 @@ func (e *Explorer) scan() error {
 				card, err := e.drc20Decode(transactionVerbose, pushedData, e.fromBlock)
 				if err != nil {
 					log.Error("scanning", "drc20Decode", err, "txhash", transactionVerbose.Txid)
-					e.dbc.UpdateCardinalsInfoNewErrInfo(card.OrderId, err.Error())
 					continue
 				}
 
