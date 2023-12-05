@@ -189,21 +189,24 @@ func (e *Explorer) scan() error {
 					continue
 				}
 
-				if wdoge == nil {
-					log.Error("scanning", "FindWDogeInfoByTxHash", err, "txhash", transactionVerbose.Txid)
+				err = e.verify.VerifyWDoge(wdoge)
+				if err != nil {
+					log.Error("scanning", "VerifyWDoge", err, "txhash", transactionVerbose.Txid)
 					continue
 				}
 
 				if wdoge.Op == "deposit" {
 					if err = e.dogeDeposit(wdoge); err != nil {
-						log.Error("scanning", "dogeDeposit", err.Error())
+						log.Error("scanning", "dogeDeposit", err.Error(), "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateWDogeInfoErr(wdoge.OrderId, err.Error())
 						continue
 					}
 				}
 
 				if wdoge.Op == "withdraw" {
 					if err = e.dogeWithdraw(wdoge); err != nil {
-						log.Error("scanning", "dogeWithdraw", err.Error())
+						log.Error("scanning", "dogeWithdraw", err.Error(), "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateWDogeInfoErr(wdoge.OrderId, err.Error())
 						continue
 					}
 				}

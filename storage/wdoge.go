@@ -109,3 +109,12 @@ func (c *DBClient) FindWDogeInfo(op, holder_address string) ([]*utils.WDogeInfo,
 
 	return wdoges, total, nil
 }
+
+func (c *DBClient) UpdateWDogeInfoErr(orderId, errInfo string) error {
+	query := "update wdoge_info set err_info = ?, order_status = 1  where order_id = ?"
+	_, err := c.SqlDB.Exec(query, errInfo, orderId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
