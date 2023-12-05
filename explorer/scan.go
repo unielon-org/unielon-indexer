@@ -196,14 +196,15 @@ func (e *Explorer) scan() error {
 
 				if wdoge.Op == "deposit" {
 					if err = e.dogeDeposit(wdoge); err != nil {
-
-						return fmt.Errorf("scan explorer err: %s", err.Error())
+						log.Error("scanning", "dogeDeposit", err.Error())
+						continue
 					}
 				}
 
 				if wdoge.Op == "withdraw" {
 					if err = e.dogeWithdraw(wdoge); err != nil {
-						return fmt.Errorf("scan explorer err: %s", err.Error())
+						log.Error("scanning", "dogeWithdraw", err.Error())
+						continue
 					}
 				}
 			}
