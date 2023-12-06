@@ -2,8 +2,6 @@ package router
 
 import (
 	"fmt"
-	"github.com/dogecoinw/doged/btcutil"
-	"github.com/dogecoinw/doged/chaincfg"
 	"github.com/dogecoinw/go-dogecoin/log"
 	"github.com/gin-gonic/gin"
 	"github.com/unielon-org/unielon-indexer/utils"
@@ -168,9 +166,12 @@ func (r *Router) FindDrc20ByAddressTick(c *gin.Context) {
 
 func (r *Router) FindOrders(c *gin.Context) {
 	type params struct {
-		ReceiveAddress string `json:"receive_address"`
-		Limit          int64  `json:"limit"`
-		OffSet         int64  `json:"offset"`
+		Address string `json:"address"`
+		Tick    string `json:"tick"`
+		Hash    string `json:"hash"`
+		Number  int64  `json:"number"`
+		Limit   int64  `json:"limit"`
+		OffSet  int64  `json:"offset"`
 	}
 
 	p := &params{
@@ -190,47 +191,7 @@ func (r *Router) FindOrders(c *gin.Context) {
 		p.Limit = 50
 	}
 
-	_, err := btcutil.DecodeAddress(p.ReceiveAddress, &chaincfg.MainNetParams)
-	if err != nil {
-		log.Error("Router", "FindOrders", fmt.Sprintf("btcutil.DecodeAddress is err:%s", err.Error()))
-		c.JSON(http.StatusInternalServerError, nil)
-		return
-	}
-	orders, total, err := r.dbc.FindOrders(p.ReceiveAddress, p.Limit, p.OffSet)
-
-	result := &utils.HttpResult{}
-	result.Code = 200
-	result.Msg = "success"
-	result.Data = orders
-	result.Total = total
-	c.JSON(http.StatusOK, result)
-}
-
-func (r *Router) FindOrdersByNumber(c *gin.Context) {
-	type params struct {
-		Number int64 `json:"number"`
-		Limit  int64 `json:"limit"`
-		OffSet int64 `json:"offset"`
-	}
-
-	p := &params{
-		Limit:  50,
-		OffSet: 0,
-	}
-
-	if err := c.ShouldBindJSON(&p); err != nil {
-		result := &utils.HttpResult{}
-		result.Code = 500
-		result.Msg = err.Error()
-		c.JSON(http.StatusOK, result)
-		return
-	}
-
-	if p.Limit > 50 {
-		p.Limit = 50
-	}
-
-	orders, total, err := r.dbc.FindOrdersByNumber(p.Number, p.Limit, p.OffSet)
+	orders, total, err := r.dbc.FindOrders(p.Address, p.Tick, p.Hash, p.Number, p.Limit, p.OffSet)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
 		return

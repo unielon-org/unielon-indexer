@@ -82,8 +82,8 @@ func main() {
 	router.POST("/v3/drc20/holders", rt.FindDrc20Holders)
 	router.POST("/v3/drc20/address", rt.FindDrc20ByAddress)
 	router.POST("/v3/drc20/address/tick", rt.FindDrc20ByAddressTick)
-	router.POST("/v3/drc20/order/address", rt.FindOrders)
-	router.POST("/v3/drc20/order/number", rt.FindOrdersByNumber)
+
+	router.POST("/v3/drc20/order", rt.FindOrders)
 
 	// SWAP
 	router.POST("/v3/swap/getreserves", rt.SwapGetReserves)

@@ -372,7 +372,21 @@ func (c *DBClient) FindCardinalsInfoNewByDrc20Hash(drc20Hash string) (*utils.Car
 }
 
 func (c *DBClient) FindDrc20All(filter *utils.Drc20Params) ([]*FindDrc20AllResult, int64, error) {
-	query := "SELECT di.tick AS ticker, di.amt_sum, di.max_, di.lim_, di.transactions, COUNT( ci.tick = di.tick ) AS Holders, di.create_date AS DeployTime, di.drc20_tx_hash, di.logo, di.introduction, di.is_check FROM drc20_address_info AS ci RIGHT JOIN drc20_info AS di ON ci.tick = di.tick  GROUP BY di.tick ORDER BY DeployTime DESC  LIMIT ? OFFSET ?"
+	query := `
+			SELECT
+				di.tick AS ticker,
+				di.amt_sum, di.max_,
+				di.lim_,
+				COUNT(ci.tick = di.tick) AS Holders,
+				di.create_date AS DeployTime,
+				di.receive_address,
+				di.drc20_tx_hash
+			FROM drc20_info AS di
+			LEFT JOIN drc20_address_info AS ci ON di.tick = ci.tick
+			GROUP BY di.tick
+			ORDER BY DeployTime
+			 LIMIT ? OFFSET ?`
+
 	rows, err := c.SqlDB.Query(query, filter.Limit, filter.OffSet)
 	if err != nil {
 		return nil, 0, err
@@ -384,48 +398,14 @@ func (c *DBClient) FindDrc20All(filter *utils.Drc20Params) ([]*FindDrc20AllResul
 
 		result := &FindDrc20AllResult{}
 		var max, amt, lim string
-		err := rows.Scan(&result.Tick, &amt, &max, &lim, &result.Transactions, &result.Holders, &result.DeployTime, &result.Inscription, &result.Logo, &result.Introduction, &result.IsCheck)
+		err := rows.Scan(&result.Tick, &amt, &max, &lim, &result.Holders, &result.DeployTime, &result.DeployBy, &result.Inscription)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		is_ok := false
-		max_big := new(big.Int)
-		if max != "" {
-			max_big, is_ok = new(big.Int).SetString(max, 10)
-			if !is_ok {
-				return nil, 0, fmt.Errorf("max error")
-			}
-		}
-		result.MaxAmt = max_big
-
-		amt_big := new(big.Int)
-		if amt != "" {
-			amt_big, is_ok = new(big.Int).SetString(amt, 10)
-			if !is_ok {
-				return nil, 0, fmt.Errorf("amt error")
-			}
-		}
-		result.MintAmt = amt_big
-
-		Lim, err := utils.ConvetStr(lim)
-		if err != nil {
-			return nil, 0, err
-		}
-		result.Lim = Lim
-
-		if result.IsCheck == 0 {
-			de := ""
-			result.Logo = &de
-			result.Introduction = &de
-			result.WhitePaper = &de
-			result.Official = &de
-			result.Telegram = &de
-			result.Discorad = &de
-			result.Twitter = &de
-			result.Facebook = &de
-			result.Github = &de
-		}
+		result.MaxAmt, _ = utils.ConvetStr(max)
+		result.MintAmt, _ = utils.ConvetStr(amt)
+		result.Lim, _ = utils.ConvetStr(lim)
 
 		results = append(results, result)
 	}
@@ -446,7 +426,20 @@ func (c *DBClient) FindDrc20All(filter *utils.Drc20Params) ([]*FindDrc20AllResul
 }
 
 func (c *DBClient) FindDrc20ByTick(tick string) (*FindDrc20AllResult, error) {
-	query := "SELECT     di.tick AS ticker,     di.amt_sum,     di.max_ AS max_,     di.transactions AS Transactions,     di.update_date AS LastMintTime,     COUNT(CASE WHEN ci.tick = di.tick THEN 1 ELSE NULL END) AS Holders,     di.create_date AS DeployTime,     di.lim_ AS lim_,     di.dec_ AS dec_,     di.receive_address, di.drc20_tx_hash AS drc20_tx_hash_i0, di.logo, di.introduction, di.white_paper, di.official, di.telegram, di.discorad, di.twitter, di.facebook, di.github, di.is_check   FROM     drc20_address_info AS ci     RIGHT JOIN drc20_info AS di ON ci.tick = di.tick WHERE     di.tick = ? GROUP BY di.tick"
+	query := `
+	SELECT
+		di.tick AS ticker,
+		di.amt_sum, di.max_,
+		di.lim_,
+		COUNT(ci.tick = di.tick) AS Holders,
+		di.create_date AS DeployTime,
+		di.receive_address,
+		di.drc20_tx_hash
+	FROM drc20_info AS di
+		LEFT JOIN drc20_address_info AS ci ON di.tick = ci.tick
+	WHERE di.tick = ? 
+	GROUP BY di.tick`
+
 	rows, err := c.SqlDB.Query(query, tick)
 	if err != nil {
 		return nil, err
@@ -456,52 +449,15 @@ func (c *DBClient) FindDrc20ByTick(tick string) (*FindDrc20AllResult, error) {
 	if rows.Next() {
 
 		result := &FindDrc20AllResult{}
-		var max, amt, lim *string
-		err := rows.Scan(&result.Tick, &amt, &max, &result.Transactions, &result.LastMintTime, &result.Holders, &result.DeployTime, &lim, &result.Dec, &result.DeployBy, &result.Inscription, &result.Logo, &result.Introduction, &result.WhitePaper, &result.Official, &result.Telegram, &result.Discorad, &result.Twitter, &result.Facebook, &result.Github, &result.IsCheck)
+		var max, amt, lim string
+		err := rows.Scan(&result.Tick, &amt, &max, &lim, &result.Holders, &result.DeployTime, &result.DeployBy, &result.Inscription)
 		if err != nil {
 			return nil, err
 		}
 
-		is_ok := false
-		max_big := new(big.Int)
-		if max != nil {
-			max_big, is_ok = new(big.Int).SetString(*max, 10)
-			if !is_ok {
-				return nil, fmt.Errorf("max error")
-			}
-		}
-		result.MaxAmt = max_big
-
-		amt_big := new(big.Int)
-		if amt != nil {
-			amt_big, is_ok = new(big.Int).SetString(*amt, 10)
-			if !is_ok {
-				return nil, fmt.Errorf("amt error")
-			}
-		}
-		result.MintAmt = amt_big
-
-		lim_big := new(big.Int)
-		if lim != nil {
-			lim_big, is_ok = new(big.Int).SetString(*lim, 10)
-			if !is_ok {
-				return nil, fmt.Errorf("lim error")
-			}
-		}
-		result.Lim = lim_big
-
-		if result.IsCheck == 0 {
-			de := ""
-			result.Logo = &de
-			result.Introduction = &de
-			result.WhitePaper = &de
-			result.Official = &de
-			result.Telegram = &de
-			result.Discorad = &de
-			result.Twitter = &de
-			result.Facebook = &de
-			result.Github = &de
-		}
+		result.MaxAmt, _ = utils.ConvetStr(max)
+		result.MintAmt, _ = utils.ConvetStr(amt)
+		result.Lim, _ = utils.ConvetStr(lim)
 		return result, nil
 	}
 	return nil, nil
@@ -630,55 +586,47 @@ func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*Fin
 	return nil, nil
 }
 
-func (c *DBClient) FindOrders(receiveAddress string, limit, offset int64) ([]*OrderResult, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,receive_address,  rate_fee, fee_tx_hash,  drc20_tx_hash, block_hash, repeat_mint,  create_date, order_status, to_address  FROM cardinals_info where receive_address = ? or to_address = ?  order by update_date desc LIMIT ? OFFSET ?"
+func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, limit, offset int64) ([]*OrderResult, int64, error) {
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,receive_address, fee_tx_hash,  drc20_tx_hash, block_hash, block_number, repeat_mint,  create_date, order_status, to_address  FROM cardinals_info "
+	where := "where"
+	whereAges := []any{}
 
-	rows, err := c.SqlDB.Query(query, receiveAddress, receiveAddress, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	if receiveAddress != "" {
+		where += " (receive_address = ? or to_address = ?) "
+		whereAges = append(whereAges, receiveAddress)
+		whereAges = append(whereAges, receiveAddress)
 	}
 
-	defer rows.Close()
-	var cards []*OrderResult
-	for rows.Next() {
-		card := &OrderResult{}
-		var max *string
-		var lim *string
-		var amt *string
-		var fee *string
-
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &fee, &card.FeeTxHash, &card.Drc20TxHash, &card.BlockHash, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
-		if err != nil {
-			return nil, 0, err
+	if tick != "" {
+		if where != "where" {
+			where += " and "
 		}
-
-		card.Max, _ = utils.ConvetStr(*max)
-		card.Amt, _ = utils.ConvetStr(*amt)
-		card.Lim, _ = utils.ConvetStr(*lim)
-		card.RateFee, _ = utils.ConvetStr(*fee)
-
-		cards = append(cards, card)
+		where += "  tick = ? "
+		whereAges = append(whereAges, tick)
 	}
 
-	query1 := "SELECT count(order_id)  FROM cardinals_info where receive_address = ? and is_del = 0"
-
-	rows1, err := c.SqlDB.Query(query1, receiveAddress)
-	if err != nil {
-		return nil, 0, err
+	if hash != "" {
+		if where != "where" {
+			where += " and "
+		}
+		where += "  drc20_tx_hash = ? "
+		whereAges = append(whereAges, hash)
 	}
 
-	defer rows1.Close()
-	total := int64(0)
-	if rows1.Next() {
-		rows1.Scan(&total)
+	if number != 0 {
+		if where != "where" {
+			where += " and "
+		}
+		where += "  block_number = ? "
+		whereAges = append(whereAges, number)
 	}
 
-	return cards, total, nil
-}
+	order := " order by update_date desc "
+	lim := " LIMIT ? OFFSET ?"
+	whereAges = append(whereAges, limit)
+	whereAges = append(whereAges, offset)
 
-func (c *DBClient) FindOrdersByNumber(number int64, limit, offset int64) ([]*OrderResult, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, receive_address, drc20_tx_hash, block_hash, block_number, repeat_mint, to_address, order_status, create_date  FROM cardinals_info where block_number=?  order by update_date desc LIMIT ? OFFSET ?"
-	rows, err := c.SqlDB.Query(query, number, limit, offset)
+	rows, err := c.SqlDB.Query(query+where+order+lim, whereAges...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -691,7 +639,7 @@ func (c *DBClient) FindOrdersByNumber(number int64, limit, offset int64) ([]*Ord
 		var lim *string
 		var amt *string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.ReceiveAddress, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.ToAddress, &card.OrderStatus, &card.CreateDate)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.FeeTxHash, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -703,9 +651,9 @@ func (c *DBClient) FindOrdersByNumber(number int64, limit, offset int64) ([]*Ord
 		cards = append(cards, card)
 	}
 
-	query1 := "SELECT count(order_id)  FROM cardinals_info where  block_number = ? and is_del = 0"
+	query1 := "SELECT count(order_id)  FROM cardinals_info "
 
-	rows1, err := c.SqlDB.Query(query1, number)
+	rows1, err := c.SqlDB.Query(query1+where, whereAges...)
 	if err != nil {
 		return nil, 0, err
 	}

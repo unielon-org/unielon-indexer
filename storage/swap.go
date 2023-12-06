@@ -430,7 +430,7 @@ func (c *DBClient) FindSwapInfoBySwapTxHash(swapTxHash string) (*utils.SwapInfo,
 	return nil, nil
 }
 
-func (c *DBClient) FindSwapInfo(op, tick0, tick1, holder_address string) ([]*utils.SwapInfo, int64, error) {
+func (c *DBClient) FindSwapInfo(op, tick0, tick1, holder_address string, limit, offset int64) ([]*utils.SwapInfo, int64, error) {
 	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, swap_tx_hash, swap_block_hash, swap_block_number, fee_address, holder_address, order_status,  update_date, create_date FROM swap_info  "
 
 	where := "where"
@@ -465,8 +465,11 @@ func (c *DBClient) FindSwapInfo(op, tick0, tick1, holder_address string) ([]*uti
 	}
 
 	order := " order by update_date desc "
+	lim := " LIMIT ? OFFSET ?"
+	whereAges = append(whereAges, limit)
+	whereAges = append(whereAges, offset)
 
-	rows, err := c.SqlDB.Query(query+where+order, whereAges...)
+	rows, err := c.SqlDB.Query(query+where+order+lim, whereAges...)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -54,7 +54,7 @@ func (c *DBClient) FindWDogeInfoByTxHash(WdogeTXHash string) (*utils.WDogeInfo, 
 	return nil, nil
 }
 
-func (c *DBClient) FindWDogeInfo(op, holder_address string) ([]*utils.WDogeInfo, int64, error) {
+func (c *DBClient) FindWDogeInfo(op, holder_address string, limit, offset int64) ([]*utils.WDogeInfo, int64, error) {
 	query := "SELECT  order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, wdoge_tx_hash, wdoge_block_hash, wdoge_block_number, fee_address, holder_address,  update_date, create_date FROM wdoge_info  "
 
 	where := "where"
@@ -74,8 +74,11 @@ func (c *DBClient) FindWDogeInfo(op, holder_address string) ([]*utils.WDogeInfo,
 	}
 
 	order := " order by update_date desc "
+	lim := " LIMIT ? OFFSET ?"
+	whereAges = append(whereAges, limit)
+	whereAges = append(whereAges, offset)
 
-	rows, err := c.SqlDB.Query(query+where+order, whereAges...)
+	rows, err := c.SqlDB.Query(query+where+order+lim, whereAges...)
 	if err != nil {
 		return nil, 0, err
 	}

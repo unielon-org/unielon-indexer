@@ -7,12 +7,19 @@ import (
 )
 
 func (r *Router) WDogeInfo(c *gin.Context) {
-	params := &struct {
+	type params struct {
 		Op            string `json:"op"`
 		HolderAddress string `json:"holder_address"`
-	}{}
+		Limit         int64  `json:"limit"`
+		OffSet        int64  `json:"offset"`
+	}
 
-	if err := c.ShouldBindJSON(&params); err != nil {
+	p := &params{
+		Limit:  50,
+		OffSet: 0,
+	}
+
+	if err := c.ShouldBindJSON(&p); err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
 		result.Msg = err.Error()
@@ -24,7 +31,7 @@ func (r *Router) WDogeInfo(c *gin.Context) {
 	result.Code = 200
 	result.Msg = "success"
 
-	swapInfos, total, err := r.dbc.FindWDogeInfo(params.Op, params.HolderAddress)
+	swapInfos, total, err := r.dbc.FindWDogeInfo(p.Op, p.HolderAddress, p.Limit, p.OffSet)
 	if err != nil {
 		result.Code = 500
 		result.Msg = err.Error()

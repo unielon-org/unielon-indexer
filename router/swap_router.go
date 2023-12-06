@@ -121,14 +121,21 @@ func (r *Router) SwapGetLiquidity(c *gin.Context) {
 }
 
 func (r *Router) SwapInfo(c *gin.Context) {
-	params := &struct {
+	type params struct {
 		Op            string `json:"op"`
 		Tick0         string `json:"tick0"`
 		Tick1         string `json:"tick1"`
 		HolderAddress string `json:"holder_address"`
-	}{}
+		Limit         int64  `json:"limit"`
+		OffSet        int64  `json:"offset"`
+	}
 
-	if err := c.ShouldBindJSON(&params); err != nil {
+	p := &params{
+		Limit:  50,
+		OffSet: 0,
+	}
+
+	if err := c.ShouldBindJSON(&p); err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
 		result.Msg = err.Error()
@@ -140,7 +147,7 @@ func (r *Router) SwapInfo(c *gin.Context) {
 	result.Code = 200
 	result.Msg = "success"
 
-	swapInfos, total, err := r.dbc.FindSwapInfo(params.Op, params.Tick0, params.Tick1, params.HolderAddress)
+	swapInfos, total, err := r.dbc.FindSwapInfo(p.Op, p.Tick0, p.Tick1, p.HolderAddress, p.Limit, p.OffSet)
 	if err != nil {
 		result.Code = 500
 		result.Msg = err.Error()
