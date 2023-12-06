@@ -169,6 +169,5 @@ func (e Explorer) dogeWithdraw(wdoge *utils.WDogeInfo) error {
 }
 
 func (e Explorer) wdogeFork(number int64) error {
-	e.dbc.UpdateWDogeInfoFork(number)
 	return nil
 }
