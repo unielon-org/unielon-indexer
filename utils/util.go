@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 )
@@ -138,4 +139,16 @@ func ConvetStr(number string) (*big.Int, error) {
 	}
 
 	return big.NewInt(0), nil
+}
+
+func Float64ToBigInt(input float64) *big.Int {
+
+	rounded := math.Ceil(input)
+
+	if rounded < math.MinInt64 || rounded > math.MaxInt64 {
+		return big.NewInt(0)
+	}
+
+	result := int64(rounded)
+	return big.NewInt(result)
 }

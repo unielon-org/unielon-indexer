@@ -1,7 +1,7 @@
 {
   "server": {
     "port": ":8089",
-    "from_block": 4993378
+    "from_block": 4994354
   },
   "sqlite": {
     "database": "data/unielon-indexer.db"

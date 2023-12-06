@@ -7,6 +7,7 @@ import (
 	"github.com/dogecoinw/doged/chaincfg/chainhash"
 	"github.com/google/uuid"
 	"github.com/unielon-org/unielon-indexer/utils"
+	"math/big"
 )
 
 func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number int64) (*utils.WDogeInfo, error) {
@@ -31,23 +32,23 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 			return nil, fmt.Errorf("op error, vout length is not 3")
 		}
 
-		fee := int64(0)
-		if wdoge.Amt.Int64()*3/1000 < 50000000 {
-			fee = 50000000
-		} else {
-			fee = wdoge.Amt.Int64() * 3 / 1000
+		fee := big.NewInt(0)
+		fee.Mul(wdoge.Amt, big.NewInt(3))
+		fee.Div(fee, big.NewInt(1000))
+		if fee.Cmp(big.NewInt(50000000)) == -1 {
+			fee = big.NewInt(50000000)
 		}
 
-		if int64(tx.Vout[1].Value*100000000) != wdoge.Amt.Int64() {
-			return nil, fmt.Errorf("The fee is not enough")
+		if utils.Float64ToBigInt(tx.Vout[1].Value*100000000).Cmp(wdoge.Amt) < 0 {
+			return nil, fmt.Errorf("The amount of tokens is incorrect %f %s", tx.Vout[1].Value, utils.Float64ToBigInt(tx.Vout[1].Value*100000000).String())
 		}
 
 		if tx.Vout[1].ScriptPubKey.Addresses[0] != wdogeCoolAddress {
 			return nil, fmt.Errorf("The address is incorrect")
 		}
 
-		if int64(tx.Vout[2].Value*100000000) != fee {
-			return nil, fmt.Errorf("The fee is not enough")
+		if utils.Float64ToBigInt(tx.Vout[2].Value*100000000).Cmp(fee) < 0 {
+			return nil, fmt.Errorf("The amount of tokens is incorrect fee %f", tx.Vout[2].Value)
 		}
 
 		if tx.Vout[2].ScriptPubKey.Addresses[0] != wdogeFeeAddress {
