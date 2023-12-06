@@ -229,35 +229,35 @@ func (e Explorer) swapNow(swap *utils.SwapInfo) error {
 
 func (e Explorer) swapFork(number int64) error {
 
-	e.dbc.UpdateSwapInfoFork(number)
+	tx, err := e.dbc.SqlDB.Begin()
+	err = e.dbc.UpdateSwapInfoFork(tx, number)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("swapFork UpdateSwapInfoFork error: %v", err)
+	}
+
+	err = e.dbc.UpdateWDogeInfoFork(tx, number)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("swapFork UpdateWDogeInfoFork error: %v", err)
+	}
 
 	swapReverts, err := e.dbc.FindSwapRevertByNumber(number)
 	if err != nil {
 		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
 	}
 
-	tx, err := e.dbc.SqlDB.Begin()
-	if err != nil {
-		return fmt.Errorf("swapFork Begin error: %v", err)
-	}
-
 	for _, revert := range swapReverts {
 		if revert.FromAddress == "" {
 			err = e.dbc.Burn(tx, revert.Tick, revert.ToAddress, revert.Amt)
-			if err != nil {
-				tx.Rollback()
-				return fmt.Errorf("swapFork Burn error: %v", err)
-			}
-			continue
+			tx.Rollback()
+			return fmt.Errorf("swapFork Burn error: %v", err)
 		}
 
 		if revert.ToAddress == "" {
 			err = e.dbc.Mint(tx, revert.Tick, revert.FromAddress, revert.Amt)
-			if err != nil {
-				tx.Rollback()
-				return fmt.Errorf("swapFork Mint error: %v", err)
-			}
-			continue
+			tx.Rollback()
+			return fmt.Errorf("swapFork Mint error: %v", err)
 		}
 
 		err = e.dbc.Transfer(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.Amt, true)
@@ -270,13 +270,12 @@ func (e Explorer) swapFork(number int64) error {
 	err = e.dbc.DelSwapRevert(tx, number)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("swapFork DelSwapRevert error: %v", err)
+		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("swapFork Commit error: %v", err)
+		return err
 	}
 
 	return nil

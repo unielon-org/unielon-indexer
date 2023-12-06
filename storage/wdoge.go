@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/unielon-org/unielon-indexer/utils"
 )
@@ -24,9 +25,9 @@ func (c *DBClient) UpdateWDogeInfo(swap *utils.WDogeInfo) error {
 	return nil
 }
 
-func (c *DBClient) UpdateWDogeInfoFork(height int64) error {
-	query := "update swap_info set wdoge_block_number = '0', wdoge_block_hash = '' where wdoge_block_number > ?"
-	_, err := c.SqlDB.Exec(query, height)
+func (c *DBClient) UpdateWDogeInfoFork(tx *sql.Tx, height int64) error {
+	query := "update swap_info set wdoge_block_number = 0, wdoge_block_hash = '' where wdoge_block_number > ?"
+	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
 	}

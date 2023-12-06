@@ -363,9 +363,9 @@ func (c *DBClient) UpdateSwapInfoErr(orderId, errInfo string) error {
 	return nil
 }
 
-func (c *DBClient) UpdateSwapInfoFork(height int64) error {
-	query := "update swap_info set swap_block_number = '0', swap_block_hash = '' where swap_block_number > ?"
-	_, err := c.SqlDB.Exec(query, height)
+func (c *DBClient) UpdateSwapInfoFork(tx *sql.Tx, height int64) error {
+	query := "update swap_info set swap_block_number = 0, swap_block_hash = '' where swap_block_number > ?"
+	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
 	}
