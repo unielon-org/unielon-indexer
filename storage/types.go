@@ -38,7 +38,6 @@ type OrderResult struct {
 	Burn           string   `json:"burn"`
 	Func           string   `json:"func"`
 	Repeat         int64    `json:"repeat"`
-	FeeTxHash      string   `json:"fee_tx_hash"`
 	Drc20TxHash    string   `json:"drc20_tx_hash"`
 	BlockHash      string   `json:"block_hash"`
 	BlockNumber    int64    `json:"block_number"`

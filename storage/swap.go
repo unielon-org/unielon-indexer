@@ -329,7 +329,7 @@ func (c *DBClient) FindSwapInfoBySwapTxHash(swapTxHash string) (*utils.SwapInfo,
 }
 
 func (c *DBClient) FindSwapInfo(op, tick0, tick1, holder_address string, limit, offset int64) ([]*utils.SwapInfo, int64, error) {
-	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, swap_tx_hash, swap_block_hash, swap_block_number, fee_address, holder_address, order_status,  update_date, create_date FROM swap_info  "
+	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, swap_tx_hash, swap_block_hash, swap_block_number, fee_address, holder_address, order_status,  update_date, create_date FROM swap_info  "
 
 	where := "where"
 	whereAges := []any{}

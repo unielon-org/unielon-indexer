@@ -42,6 +42,8 @@ func (e *Explorer) swapDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 		return nil, chainNetworkErr
 	}
 
+	swap.FeeAddress = txRawResult0.Vout[tx.Vin[0].Vout].ScriptPubKey.Addresses[0]
+
 	txhash1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
 	txRawResult1, err := e.node.GetRawTransactionVerboseBool(txhash1)
 	if err != nil {

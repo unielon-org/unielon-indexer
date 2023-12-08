@@ -566,7 +566,7 @@ func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*Fin
 }
 
 func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, limit, offset int64) ([]*OrderResult, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,receive_address, fee_tx_hash,  drc20_tx_hash, block_hash, block_number, repeat_mint,  create_date, order_status, to_address  FROM cardinals_info "
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address, receive_address,  drc20_tx_hash, block_hash, block_number, repeat_mint, create_date, order_status, to_address  FROM cardinals_info "
 	where := "where"
 	whereAges := []any{}
 
@@ -618,7 +618,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		var lim *string
 		var amt *string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.FeeTxHash, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
 		if err != nil {
 			return nil, 0, err
 		}
