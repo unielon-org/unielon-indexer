@@ -122,7 +122,6 @@ func (e *Explorer) scan() error {
 			}
 
 			if decode.P == "drc-20" {
-
 				card, err := e.drc20Decode(transactionVerbose, pushedData, e.fromBlock)
 				if err != nil {
 					log.Error("scanning", "drc20Decode", err, "txhash", transactionVerbose.Txid)
@@ -136,8 +135,7 @@ func (e *Explorer) scan() error {
 					continue
 				}
 
-				card.BlockHash = blockHash.String()
-				err = e.deployOrMintOrTransfer(card, e.fromBlock)
+				err = e.deployOrMintOrTransfer(card)
 				if err != nil {
 					log.Error("scanning", "deployOrMintOrTransfer", err, "txhash", transactionVerbose.Txid)
 					e.dbc.UpdateCardinalsInfoNewErrInfo(card.OrderId, err.Error())
@@ -153,6 +151,7 @@ func (e *Explorer) scan() error {
 				err = e.verify.VerifySwap(swap)
 				if err != nil {
 					log.Error("scanning", "VerifySwap", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateSwapInfoErr(swap.OrderId, err.Error())
 					continue
 				}
 
@@ -192,6 +191,7 @@ func (e *Explorer) scan() error {
 				err = e.verify.VerifyWDoge(wdoge)
 				if err != nil {
 					log.Error("scanning", "VerifyWDoge", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateWDogeInfoErr(wdoge.OrderId, err.Error())
 					continue
 				}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/dogecoinw/go-dogecoin/log"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/unielon-org/unielon-indexer/utils"
+	"math/big"
 	"sync"
 )
 
@@ -52,6 +53,48 @@ func (conn *DBClient) UpdateBlock(height int64, blockHash string) error {
 		return err
 	}
 	return nil
+}
+
+func (c *DBClient) InstallRevert(tx *sql.Tx, tick, from, to string, amt *big.Int, height int64) error {
+	exec := "INSERT INTO cardinals_revert (tick, from_address, to_address, amt, block_number) VALUES (?, ?, ?, ?, ?)"
+	_, err := tx.Exec(exec, tick, from, to, amt.String(), height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) DelRevert(tx *sql.Tx, height int64) error {
+	query := "delete from cardinals_revert where block_number > ?"
+	_, err := tx.Exec(query, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) FindRevertByNumber(height int64) ([]*utils.CardinalsRevert, error) {
+	query := "SELECT tick, from_address, to_address, amt FROM cardinals_revert where block_number > ? order by id desc "
+	rows, err := c.SqlDB.Query(query, height)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	reverts := make([]*utils.CardinalsRevert, 0)
+	for rows.Next() {
+		revert := &utils.CardinalsRevert{}
+		var amt string
+		err := rows.Scan(&revert.Tick, &revert.FromAddress, &revert.ToAddress, &amt)
+		if err != nil {
+			return nil, err
+		}
+
+		revert.Amt, _ = utils.ConvetStr(amt)
+		reverts = append(reverts, revert)
+	}
+
+	return reverts, nil
 }
 
 func (conn *DBClient) FindBlockByHeight(height int64) (string, error) {

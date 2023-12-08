@@ -31,7 +31,6 @@ func (e *Explorer) swapDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	}
 
 	swap.OrderId = uuid.New().String()
-	swap.FeeTxHash = tx.Vin[0].Txid
 	swap.SwapTxHash = tx.Hash
 	swap.SwapBlockHash = tx.BlockHash
 	swap.SwapBlockNumber = number
@@ -42,6 +41,8 @@ func (e *Explorer) swapDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	if err != nil {
 		return nil, chainNetworkErr
 	}
+
+	swap.FeeAddress = txRawResult0.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0]
 
 	txhash1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
 	txRawResult1, err := e.node.GetRawTransactionVerboseBool(txhash1)
@@ -222,60 +223,6 @@ func (e Explorer) swapNow(swap *utils.SwapInfo) error {
 	err = e.dbc.SwapNow(swap, info.ReservesAddress, swap.Amt0, amtout, amtfee0, amtfee1)
 	if err != nil {
 		return fmt.Errorf("swapNow SwapNow error: %v", err)
-	}
-
-	return nil
-}
-
-func (e Explorer) swapFork(number int64) error {
-
-	tx, err := e.dbc.SqlDB.Begin()
-	err = e.dbc.UpdateSwapInfoFork(tx, number)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("swapFork UpdateSwapInfoFork error: %v", err)
-	}
-
-	err = e.dbc.UpdateWDogeInfoFork(tx, number)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("swapFork UpdateWDogeInfoFork error: %v", err)
-	}
-
-	swapReverts, err := e.dbc.FindSwapRevertByNumber(number)
-	if err != nil {
-		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
-	}
-
-	for _, revert := range swapReverts {
-		if revert.FromAddress == "" {
-			err = e.dbc.Burn(tx, revert.Tick, revert.ToAddress, revert.Amt)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Burn error: %v", err)
-		}
-
-		if revert.ToAddress == "" {
-			err = e.dbc.Mint(tx, revert.Tick, revert.FromAddress, revert.Amt)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Mint error: %v", err)
-		}
-
-		err = e.dbc.Transfer(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.Amt, true)
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("swapFork Transfer error: %v", err)
-		}
-	}
-
-	err = e.dbc.DelSwapRevert(tx, number)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
 	}
 
 	return nil

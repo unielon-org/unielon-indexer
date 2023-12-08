@@ -22,13 +22,13 @@ func (c *DBClient) SwapCreate(swap *utils.SwapInfo, reservesAddress string, liqu
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, swap.Amt0, false)
+	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, swap.Amt0, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick1, swap.HolderAddress, reservesAddress, swap.Amt1, false)
+	err = c.Transfer(tx, swap.Tick1, swap.HolderAddress, reservesAddress, swap.Amt1, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -41,7 +41,7 @@ func (c *DBClient) SwapCreate(swap *utils.SwapInfo, reservesAddress string, liqu
 		return err
 	}
 
-	err = c.Mint(tx, swap.Tick, swap.HolderAddress, liquidityTotal)
+	err = c.Mint(tx, swap.Tick, swap.HolderAddress, liquidityTotal, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -53,7 +53,7 @@ func (c *DBClient) SwapCreate(swap *utils.SwapInfo, reservesAddress string, liqu
 		return err
 	}
 
-	query = "update swap_info set amt0_out = ?, amt1_out = ?, liquidity = ?, swap_block_hash = ?, swap_block_number = ? where swap_tx_hash = ?"
+	query = "update swap_info set amt0_out = ?, amt1_out = ?, liquidity = ?, swap_block_hash = ?, swap_block_number = ?, order_status = 0  where swap_tx_hash = ?"
 	_, err = tx.Exec(query, swap.Amt0Out.String(), swap.Amt1Out.String(), liquidityTotal.String(), swap.SwapBlockHash, swap.SwapBlockNumber, swap.SwapTxHash)
 	if err != nil {
 		tx.Rollback()
@@ -75,37 +75,19 @@ func (c *DBClient) SwapAdd(swap *utils.SwapInfo, reservesAddress string, amt0, a
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, amt0, false)
+	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, amt0, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.InstallSwapRevert(tx, swap.Tick0, swap.HolderAddress, reservesAddress, amt0, swap.SwapBlockNumber)
+	err = c.Transfer(tx, swap.Tick1, swap.HolderAddress, reservesAddress, amt1, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick1, swap.HolderAddress, reservesAddress, amt1, false)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.InstallSwapRevert(tx, swap.Tick1, swap.HolderAddress, reservesAddress, amt1, swap.SwapBlockNumber)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.Mint(tx, swap.Tick, swap.HolderAddress, liquidity)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.InstallSwapRevert(tx, swap.Tick, "", reservesAddress, liquidity, swap.SwapBlockNumber)
+	err = c.Mint(tx, swap.Tick, swap.HolderAddress, liquidity, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -117,7 +99,7 @@ func (c *DBClient) SwapAdd(swap *utils.SwapInfo, reservesAddress string, amt0, a
 		return err
 	}
 
-	query := "update swap_info set amt0_out = ?, amt1_out = ?, liquidity = ?, swap_block_hash = ?, swap_block_number = ? where swap_tx_hash = ?"
+	query := "update swap_info set amt0_out = ?, amt1_out = ?, liquidity = ?, swap_block_hash = ?, swap_block_number = ?, order_status = 0  where swap_tx_hash = ?"
 	_, err = tx.Exec(query, amt0.String(), amt1.String(), liquidity.String(), swap.SwapBlockHash, swap.SwapBlockNumber, swap.SwapTxHash)
 	if err != nil {
 		tx.Rollback()
@@ -140,37 +122,19 @@ func (c *DBClient) SwapRemove(swap *utils.SwapInfo, reservesAddress string, amt0
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick0, reservesAddress, swap.HolderAddress, amt0Out, false)
+	err = c.Transfer(tx, swap.Tick0, reservesAddress, swap.HolderAddress, amt0Out, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.InstallSwapRevert(tx, swap.Tick0, reservesAddress, swap.HolderAddress, amt0Out, swap.SwapBlockNumber)
+	err = c.Transfer(tx, swap.Tick1, reservesAddress, swap.HolderAddress, amt1Out, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick1, reservesAddress, swap.HolderAddress, amt1Out, false)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.InstallSwapRevert(tx, swap.Tick1, reservesAddress, swap.HolderAddress, amt1Out, swap.SwapBlockNumber)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.Burn(tx, swap.Tick, swap.HolderAddress, swap.Liquidity)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.InstallSwapRevert(tx, swap.Tick, swap.HolderAddress, "", swap.Liquidity, swap.SwapBlockNumber)
+	err = c.Burn(tx, swap.Tick, swap.HolderAddress, swap.Liquidity, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -182,7 +146,7 @@ func (c *DBClient) SwapRemove(swap *utils.SwapInfo, reservesAddress string, amt0
 		return err
 	}
 
-	query := "update swap_info set amt0_out = ?, amt1_out = ?, swap_block_hash = ?, swap_block_number = ? where swap_tx_hash = ?"
+	query := "update swap_info set amt0_out = ?, amt1_out = ?, swap_block_hash = ?, swap_block_number = ?, order_status = 0  where swap_tx_hash = ?"
 	_, err = tx.Exec(query, amt0Out.String(), amt1Out.String(), swap.SwapBlockHash, swap.SwapBlockNumber, swap.SwapTxHash)
 	if err != nil {
 		tx.Rollback()
@@ -206,49 +170,25 @@ func (c *DBClient) SwapNow(swap *utils.SwapInfo, reservesAddress string, amtin, 
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, amtin, false)
+	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, amtin, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.InstallSwapRevert(tx, swap.Tick0, swap.HolderAddress, reservesAddress, amtin, swap.SwapBlockNumber)
+	err = c.Transfer(tx, swap.Tick1, reservesAddress, swap.HolderAddress, amtout, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick1, reservesAddress, swap.HolderAddress, amtout, false)
+	err = c.Transfer(tx, swap.Tick0, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunity, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = c.InstallSwapRevert(tx, swap.Tick1, reservesAddress, swap.HolderAddress, amtout, swap.SwapBlockNumber)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.Transfer(tx, swap.Tick0, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunity, false)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.InstallSwapRevert(tx, swap.Tick0, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunity, swap.SwapBlockNumber)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.Transfer(tx, swap.Tick1, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunityOut, false)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = c.InstallSwapRevert(tx, swap.Tick1, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunityOut, swap.SwapBlockNumber)
+	err = c.Transfer(tx, swap.Tick1, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunityOut, false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -260,7 +200,7 @@ func (c *DBClient) SwapNow(swap *utils.SwapInfo, reservesAddress string, amtin, 
 		return err
 	}
 
-	exec := "update swap_info set amt1_out= ?, swap_block_hash = ?, swap_block_number = ? where swap_tx_hash = ?"
+	exec := "update swap_info set amt1_out= ?, swap_block_hash = ?, swap_block_number = ?, order_status = 0  where swap_tx_hash = ?"
 	_, err = tx.Exec(exec, amtout.String(), swap.SwapBlockHash, swap.SwapBlockNumber, swap.SwapTxHash)
 	if err != nil {
 		log.Error("swapCreate", "tx.Exec", err, "Tick0", swap.Tick0, "Tick1", swap.Tick1)
@@ -335,18 +275,9 @@ func (c *DBClient) UpdateLiquidity(tx *sql.Tx, tick string) error {
 	return nil
 }
 
-func (c *DBClient) InstallSwapRevert(tx *sql.Tx, tick, from, to string, amt *big.Int, height int64) error {
-	exec := "INSERT INTO swap_revert (tick, from_address, to_address, amt, block_number) VALUES (?, ?, ?, ?, ?)"
-	_, err := tx.Exec(exec, tick, from, to, amt.String(), height)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *DBClient) InstallSwapInfo(swap *utils.SwapInfo) error {
-	query := "INSERT INTO swap_info (order_id, op, tick0, tick1, amt0, amt1, amt0_min, amt1_min, liquidity,  fee_address, holder_address ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err := c.SqlDB.Exec(query, swap.OrderId, swap.Op, swap.Tick0, swap.Tick1, swap.Amt0.String(), swap.Amt1.String(), swap.Amt0Min.String(), swap.Amt1Min.String(), swap.Liquidity.String(), swap.FeeAddress, swap.HolderAddress)
+	query := "INSERT INTO swap_info (order_id, op, tick0, tick1, amt0, amt1, amt0_min, amt1_min, liquidity, fee_address, holder_address, swap_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)"
+	_, err := c.SqlDB.Exec(query, swap.OrderId, swap.Op, swap.Tick0, swap.Tick1, swap.Amt0.String(), swap.Amt1.String(), swap.Amt0Min.String(), swap.Amt1Min.String(), swap.Liquidity.String(), swap.FeeAddress, swap.HolderAddress, swap.SwapTxHash)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -364,40 +295,7 @@ func (c *DBClient) UpdateSwapInfoErr(orderId, errInfo string) error {
 }
 
 func (c *DBClient) UpdateSwapInfoFork(tx *sql.Tx, height int64) error {
-	query := "update swap_info set swap_block_number = 0, swap_block_hash = '' where swap_block_number > ?"
-	_, err := tx.Exec(query, height)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *DBClient) FindSwapRevertByNumber(height int64) ([]*utils.SwapRevert, error) {
-	query := "SELECT tick, from_address, to_address, amt FROM swap_revert where block_number = ? order by id desc "
-	rows, err := c.SqlDB.Query(query, height)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-	reverts := make([]*utils.SwapRevert, 0)
-	for rows.Next() {
-		revert := &utils.SwapRevert{}
-		var amt string
-		err := rows.Scan(&revert.Tick, &revert.FromAddress, &revert.ToAddress, &amt)
-		if err != nil {
-			return nil, err
-		}
-
-		revert.Amt, _ = utils.ConvetStr(amt)
-		reverts = append(reverts, revert)
-	}
-
-	return reverts, nil
-}
-
-func (c *DBClient) DelSwapRevert(tx *sql.Tx, height int64) error {
-	query := "delete from swap_revert where block_number = ?"
+	query := "update swap_info set swap_block_number = 0, swap_block_hash = '', order_status = 0 where swap_block_number > ?"
 	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
@@ -406,7 +304,7 @@ func (c *DBClient) DelSwapRevert(tx *sql.Tx, height int64) error {
 }
 
 func (c *DBClient) FindSwapInfoBySwapTxHash(swapTxHash string) (*utils.SwapInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, liquidity, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, swap_tx_hash, swap_tx_raw, swap_block_hash, swap_block_number, fee_address, holder_address, order_status, update_date, create_date  FROM swap_info where swap_tx_hash = ?"
+	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, liquidity, swap_tx_hash, swap_block_hash, swap_block_number, fee_address, holder_address, order_status, update_date, create_date  FROM swap_info where swap_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, swapTxHash)
 	if err != nil {
 		return nil, err
@@ -416,7 +314,7 @@ func (c *DBClient) FindSwapInfoBySwapTxHash(swapTxHash string) (*utils.SwapInfo,
 	if rows.Next() {
 		swap := &utils.SwapInfo{}
 		var amt0, amt1, liquidity string
-		err := rows.Scan(&swap.OrderId, &swap.Op, &swap.Tick0, &swap.Tick1, &amt0, &amt1, &liquidity, &swap.FeeTxHash, &swap.FeeTxIndex, &swap.FeeBlockHash, &swap.FeeBlockNumber, &swap.SwapTxHash, &swap.SwapTxRaw, &swap.SwapBlockHash, &swap.SwapBlockNumber, &swap.FeeAddress, &swap.HolderAddress, &swap.OrderStatus, &swap.UpdateDate, &swap.CreateDate)
+		err := rows.Scan(&swap.OrderId, &swap.Op, &swap.Tick0, &swap.Tick1, &amt0, &amt1, &liquidity, &swap.SwapTxHash, &swap.SwapBlockHash, &swap.SwapBlockNumber, &swap.FeeAddress, &swap.HolderAddress, &swap.OrderStatus, &swap.UpdateDate, &swap.CreateDate)
 		if err != nil {
 			return nil, err
 		}
@@ -479,7 +377,7 @@ func (c *DBClient) FindSwapInfo(op, tick0, tick1, holder_address string, limit, 
 	for rows.Next() {
 		swap := &utils.SwapInfo{}
 		var amt0, amt1 string
-		err := rows.Scan(&swap.OrderId, &swap.Op, &swap.Tick0, &swap.Tick1, &amt0, &amt1, &swap.FeeTxHash, &swap.FeeTxIndex, &swap.FeeBlockHash, &swap.FeeBlockNumber, &swap.SwapTxHash, &swap.SwapBlockHash, &swap.SwapBlockNumber, &swap.FeeAddress, &swap.HolderAddress, &swap.OrderStatus, &swap.UpdateDate, &swap.CreateDate)
+		err := rows.Scan(&swap.OrderId, &swap.Op, &swap.Tick0, &swap.Tick1, &amt0, &amt1, &swap.SwapTxHash, &swap.SwapBlockHash, &swap.SwapBlockNumber, &swap.FeeAddress, &swap.HolderAddress, &swap.OrderStatus, &swap.UpdateDate, &swap.CreateDate)
 		if err != nil {
 			return nil, 0, err
 		}

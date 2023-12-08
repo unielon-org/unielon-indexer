@@ -11,7 +11,7 @@ func ConvetCard(params *NewParams) (*Cardinals, error) {
 	card := &Cardinals{
 		P:              params.P,
 		Op:             params.Op,
-		Tick:           params.Tick,
+		Tick:           strings.ToUpper(params.Tick),
 		Dec:            params.Dec,
 		Burn:           params.Burn,
 		Func:           params.Func,
@@ -40,12 +40,6 @@ func ConvetCard(params *NewParams) (*Cardinals, error) {
 		return nil, err
 	}
 	card.Lim = lim
-
-	rateFee, err := ConvetStr(params.RateFee)
-	if err != nil {
-		return nil, err
-	}
-	card.RateFee = rateFee
 	card.Repeat = params.Repeat
 
 	return card, nil

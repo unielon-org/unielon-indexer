@@ -79,33 +79,26 @@ type WDogeParams struct {
 
 // Models
 type Cardinals struct {
-	OrderId            string   `json:"order_id"`
-	P                  string   `json:"p"`
-	Op                 string   `json:"op"`
-	Tick               string   `json:"tick"`
-	Amt                *big.Int `json:"amt"`
-	Max                *big.Int `json:"max"`
-	Lim                *big.Int `json:"lim"`
-	Dec                int64    `json:"dec"`
-	Burn               string   `json:"burn"`
-	Func               string   `json:"func"`
-	RateFee            *big.Int `json:"rate_fee"`
-	Repeat             int64    `json:"repeat"`
-	FeeTxHash          string   `json:"fee_tx_hash"`
-	FeeTxIndex         uint32   `json:"fee_tx_index"`
-	FeeTxRaw           string   `json:"fee_tx_raw"`
-	Drc20TxHash        string   `json:"drc20_tx_hash"`
-	Drc20TxRaw         string   `json:"drc20_tx_raw"`
-	BlockNumber        int64    `json:"block_number"`
-	BlockHash          string   `json:"block_hash"`
-	BlockConfirmations uint64   `json:"block_confirmations"`
-	ReceiveAddress     string   `json:"receive_address"`
-	ToAddress          string   `json:"to_address"`
-	AdminAddress       string   `json:"admin_address"`
-	FeeAddress         string   `json:"fee_address"`
-	OrderStatus        int64    `json:"order_status"`
-	ErrInfo            string   `json:"err_info"`
-	CreateDate         string   `json:"create_date"`
+	OrderId        string   `json:"order_id"`
+	P              string   `json:"p"`
+	Op             string   `json:"op"`
+	Tick           string   `json:"tick"`
+	Amt            *big.Int `json:"amt"`
+	Max            *big.Int `json:"max"`
+	Lim            *big.Int `json:"lim"`
+	Dec            int64    `json:"dec"`
+	Burn           string   `json:"burn"`
+	Func           string   `json:"func"`
+	Repeat         int64    `json:"repeat"`
+	Drc20TxHash    string   `json:"drc20_tx_hash"`
+	BlockNumber    int64    `json:"block_number"`
+	BlockHash      string   `json:"block_hash"`
+	ReceiveAddress string   `json:"receive_address"`
+	ToAddress      string   `json:"to_address"`
+	FeeAddress     string   `json:"fee_address"`
+	OrderStatus    int64    `json:"order_status"`
+	ErrInfo        string   `json:"err_info"`
+	CreateDate     string   `json:"create_date"`
 }
 
 // SWAP
@@ -125,13 +118,7 @@ type SwapInfo struct {
 	Liquidity       *big.Int `json:"liquidity"`
 	HolderAddress   string   `json:"holder_address"`
 	FeeAddress      string   `json:"fee_address"`
-	FeeTxHash       string   `json:"fee_tx_hash"`
-	FeeTxIndex      uint32   `json:"fee_tx_index"`
-	FeeTxRaw        *string  `json:"fee_tx_raw"`
-	FeeBlockNumber  int64    `json:"fee_block_number"`
-	FeeBlockHash    string   `json:"fee_block_hash"`
 	SwapTxHash      string   `json:"swap_tx_hash"`
-	SwapTxRaw       *string  `json:"swap_tx_raw"`
 	SwapBlockNumber int64    `json:"swap_block_number"`
 	SwapBlockHash   string   `json:"swap_block_hash"`
 	OrderStatus     int64    `json:"order_status"`
@@ -152,15 +139,6 @@ type SwapLiquidity struct {
 	HolderAddress   string   `json:"holder_address"`
 }
 
-// swap_revert
-type SwapRevert struct {
-	Tick        string   `json:"tick"`
-	FromAddress string   `json:"from_address"`
-	ToAddress   string   `json:"to_address"`
-	Amt         *big.Int `json:"amt"`
-	BlockNumber int64    `json:"block_number"`
-}
-
 // WDOGE
 type WDogeInfo struct {
 	OrderId          string   `json:"order_id"`
@@ -169,15 +147,18 @@ type WDogeInfo struct {
 	Amt              *big.Int `json:"amt"`
 	HolderAddress    string   `json:"holder_address"`
 	FeeAddress       string   `json:"fee_address"`
-	FeeTxHash        string   `json:"fee_tx_hash"`
-	FeeTxIndex       uint32   `json:"fee_tx_index"`
-	FeeTxRaw         *string  `json:"fee_tx_raw"`
-	FeeBlockNumber   int64    `json:"fee_block_number"`
-	FeeBlockHash     string   `json:"fee_block_hash"`
 	WDogeTxHash      string   `json:"wdoge_tx_hash"`
-	WDogeTxRaw       *string  `json:"wdoge_tx_raw"`
 	WDogeBlockNumber int64    `json:"wdoge_block_number"`
 	WDogeBlockHash   string   `json:"wdoge_block_hash"`
 	UpdateDate       string   `json:"update_date"`
 	CreateDate       string   `json:"create_date"`
+}
+
+// cardinals_revert
+type CardinalsRevert struct {
+	Tick        string   `json:"tick"`
+	FromAddress string   `json:"from_address"`
+	ToAddress   string   `json:"to_address"`
+	Amt         *big.Int `json:"amt"`
+	BlockNumber int64    `json:"block_number"`
 }

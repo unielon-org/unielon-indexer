@@ -28,9 +28,10 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 	}
 
 	card.OrderId = uuid.New().String()
-	card.FeeTxHash = tx.Vin[0].Txid
 	card.Drc20TxHash = tx.Hash
 	card.BlockHash = tx.BlockHash
+	card.BlockNumber = number
+	card.Repeat = 1
 
 	if card.Op == "deploy" {
 
@@ -41,15 +42,15 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 		card.ReceiveAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 
 		if tx.Vout[1].ScriptPubKey.Addresses[0] != e.feeAddress {
-			return nil, fmt.Errorf("The address is incorrect")
+			return nil, fmt.Errorf("the address is incorrect")
 		}
 
 		if tx.Vout[0].Value != 0.001 {
-			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
+			return nil, fmt.Errorf("the amount of tokens exceeds the 0.0001")
 		}
 
 		if tx.Vout[1].Value < 100 {
-			return nil, fmt.Errorf("The balance is insufficient")
+			return nil, fmt.Errorf("the balance is insufficient")
 		}
 	}
 
@@ -66,7 +67,7 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 		}
 
 		if tx.Vout[0].Value != 0.001*float64(card.Repeat) {
-			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
+			return nil, fmt.Errorf("the amount of tokens exceeds the 0.0001")
 		}
 
 		if tx.Vout[1].Value < float64(card.Repeat)*0.5 {
@@ -99,10 +100,10 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 				card.ToAddress += ("," + tx.Vout[i].ScriptPubKey.Addresses[0])
 			}
 		}
+
 	}
 
 	card.FeeAddress = txRawResult0.Vout[tx.Vin[0].Vout].ScriptPubKey.Addresses[0]
-	card.BlockNumber = number
 
 	for _, v := range strings.Split(card.ToAddress, ",") {
 		if card.ReceiveAddress == v {
@@ -119,7 +120,8 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 		if cardinals.BlockNumber != 0 {
 			return nil, fmt.Errorf("cardinals already exist or err %s", card.Drc20TxHash)
 		}
-		return cardinals, nil
+		card.OrderId = cardinals.OrderId
+		return card, nil
 	} else {
 		if err := e.dbc.InstallCardinalsInfo(card); err != nil {
 			return nil, fmt.Errorf("InstallCardinalsInfoTransferNew err: %v", err)
@@ -128,14 +130,7 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 	return card, nil
 }
 
-func (e *Explorer) deployOrMintOrTransfer(card *utils.Cardinals, height int64) error {
-
-	card.BlockConfirmations = 1
-	card.BlockNumber = height
-	err := e.dbc.UpdateCardinalsBlockNumber(card)
-	if err != nil {
-		return fmt.Errorf("fork UpdateCardinalsBlockNumber err: %s order_id: %s", err.Error(), card.OrderId)
-	}
+func (e *Explorer) deployOrMintOrTransfer(card *utils.Cardinals) error {
 
 	tx, err := e.dbc.SqlDB.Begin()
 	if err != nil {
@@ -144,8 +139,9 @@ func (e *Explorer) deployOrMintOrTransfer(card *utils.Cardinals, height int64) e
 
 	if card.Op == "deploy" {
 		log.Info("deploy", "tick", card.Tick, "max", card.Max, "lim", card.Lim, "tick", card.Tick, "drc20_tx_hash", card.Drc20TxHash)
-		err := e.dbc.InstallDrc20(card.Max, card.Lim, card.Tick, card.ReceiveAddress, card.Drc20TxHash)
+		err := e.dbc.InstallDrc20(tx, card.Max, card.Lim, card.Tick, card.ReceiveAddress, card.Drc20TxHash)
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("fork deploy InstallDrc20 err: %s order_id: %s", err.Error(), card.OrderId)
 		}
 	}
@@ -153,15 +149,16 @@ func (e *Explorer) deployOrMintOrTransfer(card *utils.Cardinals, height int64) e
 	if card.Op == "mint" {
 		log.Info("mint", "tick", card.Tick, "amt", card.Amt, "repeat", card.Repeat, "tick", card.Tick, "drc20_tx_hash", card.Drc20TxHash)
 		amount := big.NewInt(0).Mul(card.Amt, big.NewInt(card.Repeat))
-		if err := e.dbc.Mint(tx, card.Tick, card.ReceiveAddress, amount); err != nil {
+		if err := e.dbc.Mint(tx, card.Tick, card.ReceiveAddress, amount, false, card.BlockNumber); err != nil {
 			tx.Rollback()
 			return fmt.Errorf("fork mint Mint err: %s order_id: %s", err.Error(), card.OrderId)
 		}
+
 	}
 
 	if card.Op == "transfer" {
 		for _, v := range strings.Split(card.ToAddress, ",") {
-			err = e.dbc.Transfer(tx, card.Tick, card.ReceiveAddress, v, card.Amt, false)
+			err = e.dbc.Transfer(tx, card.Tick, card.ReceiveAddress, v, card.Amt, false, card.BlockNumber)
 			if err != nil {
 				tx.Rollback()
 				return fmt.Errorf("explorer Transfer err: %s order_id: %s", err.Error(), card.OrderId)
@@ -169,50 +166,15 @@ func (e *Explorer) deployOrMintOrTransfer(card *utils.Cardinals, height int64) e
 		}
 	}
 
+	err = e.dbc.UpdateCardinalsBlockNumber(tx, card)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("fork UpdateCardinalsBlockNumber err: %s order_id: %s", err.Error(), card.OrderId)
+	}
+
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("fork Commit err: %s order_id: %s", err.Error(), card.OrderId)
 	}
 
-	return nil
-}
-
-func (e *Explorer) drc20Fork(number int64) error {
-	cards, err := e.dbc.FindCardinalsInfoNewByNumber(number)
-	if err != nil {
-		return fmt.Errorf("forkBack FindCardinalsInfoNewByNumber error: %v", err)
-	}
-
-	for _, card := range cards {
-
-		card.BlockHash = ""
-		card.BlockNumber = 0
-		card.BlockConfirmations = 0
-		card.OrderStatus = 0
-		err = e.dbc.UpdateCardinalsBlockNumber(card)
-		if err != nil {
-			return fmt.Errorf("forkBack UpdateCardinalsBlockNumber error: %v", err)
-		}
-
-		if card.Op == "deploy" {
-			err := e.dbc.DelDrc20Info(card.Tick, card.ReceiveAddress, card.Drc20TxHash)
-			if err != nil {
-				return fmt.Errorf("forkBack DelDrc20Info error: %v", err)
-			}
-		}
-
-		if card.Op == "mint" {
-			if err := e.dbc.Burn(nil, card.Tick, card.ReceiveAddress, card.Amt); err != nil {
-				return fmt.Errorf("forkBack burn Mint error: %v", err)
-			}
-		}
-
-		if card.Op == "transfer" {
-			for _, v := range strings.Split(card.ToAddress, ",") {
-				if err := e.dbc.Transfer(nil, card.Tick, v, card.ReceiveAddress, card.Amt, true); err != nil {
-					return fmt.Errorf("forkBack Transfer error: %v", err)
-				}
-			}
-		}
-	}
 	return nil
 }

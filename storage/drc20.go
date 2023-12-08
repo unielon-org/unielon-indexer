@@ -10,8 +10,8 @@ import (
 )
 
 func (c *DBClient) InstallCardinalsInfo(card *utils.Cardinals) error {
-	query := "INSERT INTO cardinals_info (order_id, p, op, tick, amt, max_, lim_, dec_, burn_, func_, receive_address, fee_address, to_address, fee_tx_hash, drc20_tx_hash, block_number, block_hash, repeat_mint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-	_, err := c.SqlDB.Exec(query, card.OrderId, card.P, card.Op, card.Tick, card.Amt.String(), card.Max.String(), card.Lim.String(), card.Dec, card.Burn, card.Func, card.ReceiveAddress, card.FeeAddress, card.ToAddress, card.FeeTxHash, card.Drc20TxHash, card.BlockNumber, card.BlockHash, card.Repeat)
+	query := "INSERT INTO cardinals_info (order_id, p, op, tick, amt, max_, lim_, dec_, burn_, func_, receive_address, fee_address, to_address, drc20_tx_hash, repeat_mint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	_, err := c.SqlDB.Exec(query, card.OrderId, card.P, card.Op, card.Tick, card.Amt.String(), card.Max.String(), card.Lim.String(), card.Dec, card.Burn, card.Func, card.ReceiveAddress, card.FeeAddress, card.ToAddress, card.Drc20TxHash, card.Repeat)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -19,18 +19,27 @@ func (c *DBClient) InstallCardinalsInfo(card *utils.Cardinals) error {
 	return nil
 }
 
-func (c *DBClient) InstallDrc20(max, lim *big.Int, tick, receive_address, drc20_tx_hash string) error {
+func (c *DBClient) InstallDrc20(tx *sql.Tx, max, lim *big.Int, tick, receive_address, drc20_tx_hash string) error {
 	query := "INSERT INTO drc20_info (tick, `max_`, lim_, receive_address, drc20_tx_hash) VALUES (?, ?, ?, ?, ?)"
-	_, err := c.SqlDB.Exec(query, tick, max.String(), lim.String(), receive_address, drc20_tx_hash)
+	_, err := tx.Exec(query, tick, max.String(), lim.String(), receive_address, drc20_tx_hash)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *DBClient) UpdateCardinalsBlockNumber(card *utils.Cardinals) error {
-	query := "UPDATE cardinals_info SET block_number = ?, block_hash = ?, block_confirmations = ?, order_status = ? where order_id = ?"
-	_, err := c.SqlDB.Exec(query, card.BlockNumber, card.BlockHash, card.BlockConfirmations, card.OrderStatus, card.OrderId)
+func (c *DBClient) UpdateCardinalsBlockNumber(tx *sql.Tx, card *utils.Cardinals) error {
+	query := "UPDATE cardinals_info SET block_number = ?, block_hash = ?, order_status = 0 where order_id = ?"
+	_, err := tx.Exec(query, card.BlockNumber, card.BlockHash, card.OrderId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) UpdateCardinalsInfoFork(tx *sql.Tx, height int64) error {
+	query := "update cardinals_info set block_number = 0, block_hash = '', order_status = 0 where block_number > ?"
+	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
 	}
@@ -46,28 +55,13 @@ func (c *DBClient) UpdateCardinalsInfoNewErrInfo(orderId, errInfo string) error 
 	return nil
 }
 
-func (c *DBClient) UpdateAddressBalanceMint(tx *sql.Tx, tick string, sum1, sum2 *big.Int, address string, sub bool) error {
-
-	var err error
-	if tx == nil {
-		tx, err = c.SqlDB.Begin()
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			err = tx.Commit()
-			if err != nil {
-				tx.Rollback()
-			}
-		}()
-	}
+func (c *DBClient) UpdateAddressBalanceMintOrBurn(tx *sql.Tx, tick string, sum1, sum2 *big.Int, address string, sub bool) error {
 
 	update1 := "UPDATE drc20_info SET amt_sum=?, transactions = transactions + 1 WHERE tick = ?"
 	if sub {
 		update1 = "UPDATE drc20_info SET amt_sum=?, transactions = transactions - 1 WHERE tick = ?"
 	}
-	_, err = tx.Exec(update1, sum1.String(), tick)
+	_, err := tx.Exec(update1, sum1.String(), tick)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -85,26 +79,11 @@ func (c *DBClient) UpdateAddressBalanceMint(tx *sql.Tx, tick string, sum1, sum2 
 
 func (c *DBClient) UpdateAddressBalanceTran(tx *sql.Tx, tick string, sum1 *big.Int, address1 string, sum2 *big.Int, address2 string, sub bool) error {
 
-	var err error
-	if tx == nil {
-		tx, err = c.SqlDB.Begin()
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			err = tx.Commit()
-			if err != nil {
-				tx.Rollback()
-			}
-		}()
-	}
-
 	update1 := "UPDATE drc20_info SET transactions = transactions + 1 WHERE tick = ?"
 	if sub {
 		update1 = "UPDATE drc20_info SET transactions = transactions - 1 WHERE tick = ?"
 	}
-	_, err = tx.Exec(update1, tick)
+	_, err := tx.Exec(update1, tick)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -272,7 +251,7 @@ func (c *DBClient) FindSwapDrc20AddressInfoByTick(tx *sql.Tx, tick string, addre
 }
 
 func (c *DBClient) FindCardinalsInfoNewByNumber(number int64) ([]*utils.Cardinals, error) {
-	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint,  drc20_tx_hash, block_hash, block_number, block_confirmations, receive_address,  create_date FROM cardinals_info where block_number > ? "
+	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint, drc20_tx_hash, block_hash, block_number, receive_address, create_date FROM cardinals_info where block_number > ? and order_status = 0"
 	rows, err := c.SqlDB.Query(query, number)
 	if err != nil {
 		return nil, err
@@ -284,7 +263,7 @@ func (c *DBClient) FindCardinalsInfoNewByNumber(number int64) ([]*utils.Cardinal
 		card := &utils.Cardinals{}
 		var max, amt, lim string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &amt, &max, &lim, &card.Repeat, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.BlockConfirmations, &card.ReceiveAddress, &card.CreateDate)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &amt, &max, &lim, &card.Repeat, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.ReceiveAddress, &card.CreateDate)
 		for err != nil {
 			return nil, err
 		}
@@ -323,7 +302,7 @@ func (c *DBClient) FindCardinalsInfoNewByNumber(number int64) ([]*utils.Cardinal
 }
 
 func (c *DBClient) FindCardinalsInfoNewByDrc20Hash(drc20Hash string) (*utils.Cardinals, error) {
-	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint,  drc20_tx_hash, block_hash, block_number, block_confirmations, receive_address,  create_date, to_address FROM cardinals_info where drc20_tx_hash = ?"
+	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint, drc20_tx_hash, block_hash, block_number, receive_address, create_date, to_address FROM cardinals_info where drc20_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, drc20Hash)
 	if err != nil {
 		return nil, err
@@ -334,7 +313,7 @@ func (c *DBClient) FindCardinalsInfoNewByDrc20Hash(drc20Hash string) (*utils.Car
 		card := &utils.Cardinals{}
 		var max, amt, lim string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &amt, &max, &lim, &card.Repeat, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.BlockConfirmations, &card.ReceiveAddress, &card.CreateDate, &card.ToAddress)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &amt, &max, &lim, &card.Repeat, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.ReceiveAddress, &card.CreateDate, &card.ToAddress)
 		for err != nil {
 			return nil, err
 		}

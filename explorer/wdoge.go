@@ -59,7 +59,6 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	}
 
 	wdoge.OrderId = uuid.New().String()
-	wdoge.FeeTxHash = tx.Vin[0].Txid
 	wdoge.WDogeTxHash = tx.Hash
 	wdoge.WDogeBlockHash = tx.BlockHash
 	wdoge.WDogeBlockNumber = number
@@ -107,13 +106,7 @@ func (e Explorer) dogeDeposit(wdoge *utils.WDogeInfo) error {
 		return err
 	}
 
-	err = e.dbc.Mint(tx, wdoge.Tick, wdoge.HolderAddress, wdoge.Amt)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = e.dbc.InstallSwapRevert(tx, wdoge.Tick, "", wdoge.HolderAddress, wdoge.Amt, wdoge.WDogeBlockNumber)
+	err = e.dbc.Mint(tx, wdoge.Tick, wdoge.HolderAddress, wdoge.Amt, false, wdoge.WDogeBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -141,13 +134,7 @@ func (e Explorer) dogeWithdraw(wdoge *utils.WDogeInfo) error {
 		return err
 	}
 
-	err = e.dbc.Burn(tx, wdoge.Tick, wdoge.HolderAddress, wdoge.Amt)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = e.dbc.InstallSwapRevert(tx, wdoge.Tick, wdoge.HolderAddress, "", wdoge.Amt, wdoge.WDogeBlockNumber)
+	err = e.dbc.Burn(tx, wdoge.Tick, wdoge.HolderAddress, wdoge.Amt, false, wdoge.WDogeBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -165,9 +152,5 @@ func (e Explorer) dogeWithdraw(wdoge *utils.WDogeInfo) error {
 		tx.Rollback()
 		return err
 	}
-	return nil
-}
-
-func (e Explorer) wdogeFork(number int64) error {
 	return nil
 }
