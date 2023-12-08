@@ -17,7 +17,7 @@ func (c *DBClient) InstallWDogeInfo(wdoge *utils.WDogeInfo) error {
 }
 
 func (c *DBClient) UpdateWDogeInfoFork(tx *sql.Tx, height int64) error {
-	query := "update swap_info set wdoge_block_number = 0, wdoge_block_hash = '', order_status = 0 where wdoge_block_number > ?"
+	query := "update wdoge_info set wdoge_block_number = 0, wdoge_block_hash = '', order_status = 0 where wdoge_block_number > ?"
 	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
