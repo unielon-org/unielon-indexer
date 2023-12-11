@@ -484,7 +484,7 @@ func (c *DBClient) FindDrc20HoldersByTick(tick string, limit, offset int64) ([]*
 }
 
 func (c *DBClient) FindDrc20AllByAddress(receive_address string, limit, offset int64) ([]*FindDrc20AllByAddressResult, int64, error) {
-	query := "SELECT tick, amt_sum FROM drc20_address_info where receive_address = ? and amt_sum != '0' LIMIT ? OFFSET ?;"
+	query := "SELECT di.tick, di.amt_sum, d20i.drc20_tx_hash FROM drc20_address_info di left join drc20_info d20i on di.tick = d20i.tick where di.receive_address = ? and di.amt_sum != '0' LIMIT ? OFFSET ?;"
 	rows, err := c.SqlDB.Query(query, receive_address, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -498,7 +498,7 @@ func (c *DBClient) FindDrc20AllByAddress(receive_address string, limit, offset i
 		result := &FindDrc20AllByAddressResult{}
 		var amt string
 
-		err := rows.Scan(&result.Tick, &amt)
+		err := rows.Scan(&result.Tick, &amt, &result.Inscription)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -532,20 +532,19 @@ func (c *DBClient) FindDrc20AllByAddress(receive_address string, limit, offset i
 }
 
 func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*FindDrc20AllByAddressResult, error) {
-	query := "SELECT tick, amt_sum FROM drc20_address_info where receive_address = ? and amt_sum != '0' and tick = ?"
+	query := "SELECT di.tick, di.amt_sum, d20i.drc20_tx_hash FROM drc20_address_info di left join drc20_info d20i on di.tick = d20i.tick where di.receive_address = ? and di.amt_sum != '0' and di.tick = ?"
 	rows, err := c.SqlDB.Query(query, receive_address, tick)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
-
 	if rows.Next() {
 
 		result := &FindDrc20AllByAddressResult{}
 		var amt string
 
-		err := rows.Scan(&result.Tick, &amt)
+		err := rows.Scan(&result.Tick, &amt, &result.Inscription)
 		if err != nil {
 			return nil, err
 		}
@@ -626,6 +625,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		card.Max, _ = utils.ConvetStr(*max)
 		card.Amt, _ = utils.ConvetStr(*amt)
 		card.Lim, _ = utils.ConvetStr(*lim)
+		card.Inscription = card.Drc20TxHash
 
 		cards = append(cards, card)
 	}

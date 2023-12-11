@@ -57,9 +57,9 @@ func TestCreateAddress(t *testing.T) {
 	builder := txscript.NewScriptBuilder()
 	//create redeem script
 	builder.AddOp(txscript.OP_1).AddData(wif.PrivKey.PubKey().SerializeCompressed()).AddOp(txscript.OP_1)
-	builder.AddOp(txscript.OP_CHECKMULTISIG)
+	builder.AddOp(txscript.OP_CHECKMULTISIGVERIFY)
 	builder.AddData([]byte("ord")).AddData([]byte("text/plain;charset=utf-8")).AddData(jsonData)
-	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
+	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
 
 	// redeem script is the script program in the format of []byte
 	redeemScript, err := builder.Script()
@@ -103,9 +103,9 @@ func TestTransfer(t *testing.T) {
 	builder := txscript.NewScriptBuilder()
 	//create redeem script
 	builder.AddOp(txscript.OP_1).AddData(wif.PrivKey.PubKey().SerializeCompressed()).AddOp(txscript.OP_1)
-	builder.AddOp(txscript.OP_CHECKMULTISIG)
+	builder.AddOp(txscript.OP_CHECKMULTISIGVERIFY)
 	builder.AddData([]byte("ord")).AddData([]byte("text/plain;charset=utf-8")).AddData(jsonData)
-	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
+	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
 
 	// redeem script is the script program in the format of []byte
 	redeemScript, err := builder.Script()
@@ -198,7 +198,7 @@ func TestMintDeploy(t *testing.T) {
 
 	//create redeem script
 	builder.AddOp(txscript.OP_1).AddData(wif.PrivKey.PubKey().SerializeCompressed()).AddOp(txscript.OP_1)
-	builder.AddOp(txscript.OP_CHECKMULTISIG)
+	builder.AddOp(txscript.OP_CHECKMULTISIGVERIFY)
 	builder.AddData([]byte("ord")).AddData([]byte("text/plain;charset=utf-8")).AddData(jsonData)
 	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
 
@@ -327,7 +327,7 @@ func TestSwap(t *testing.T) {
 
 	//create redeem script
 	builder.AddOp(txscript.OP_1).AddData(wif.PrivKey.PubKey().SerializeCompressed()).AddOp(txscript.OP_1)
-	builder.AddOp(txscript.OP_CHECKMULTISIG)
+	builder.AddOp(txscript.OP_CHECKMULTISIGVERIFY)
 	builder.AddData([]byte("ord")).AddData([]byte("text/plain;charset=utf-8")).AddData(jsonData)
 	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
 
@@ -420,7 +420,7 @@ func TestWdoge(t *testing.T) {
 
 	//create redeem script
 	builder.AddOp(txscript.OP_1).AddData(wif.PrivKey.PubKey().SerializeCompressed()).AddOp(txscript.OP_1)
-	builder.AddOp(txscript.OP_CHECKMULTISIG)
+	builder.AddOp(txscript.OP_CHECKMULTISIGVERIFY)
 	builder.AddData([]byte("ord")).AddData([]byte("text/plain;charset=utf-8")).AddData(jsonData)
 	builder.AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP).AddOp(txscript.OP_DROP)
 

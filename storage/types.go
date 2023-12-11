@@ -5,8 +5,9 @@ import (
 )
 
 type FindDrc20AllByAddressResult struct {
-	Tick string   `json:"tick"`
-	Amt  *big.Int `json:"amt"`
+	Tick        string   `json:"tick"`
+	Amt         *big.Int `json:"amt"`
+	Inscription string   `json:"inscription"`
 }
 
 type FindDrc20AllResult struct {
@@ -39,6 +40,7 @@ type OrderResult struct {
 	Func           string   `json:"func"`
 	Repeat         int64    `json:"repeat"`
 	Drc20TxHash    string   `json:"drc20_tx_hash"`
+	Inscription    string   `json:"inscription"`
 	BlockHash      string   `json:"block_hash"`
 	BlockNumber    int64    `json:"block_number"`
 	ReceiveAddress string   `json:"receive_address"`
