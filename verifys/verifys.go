@@ -199,13 +199,20 @@ func (v *Verifys) verifySwapAdd(swap *utils.SwapInfo) error {
 	}
 
 	amountBOptimal := big.NewInt(0).Mul(amt0, info.Amt1)
+	if amountBOptimal.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("The amount of tokens exceeds the 0")
+	}
+
 	amountBOptimal = big.NewInt(0).Div(amountBOptimal, info.Amt0)
 
 	if amountBOptimal.Cmp(amt1Min) < 0 {
 
 		amountAOptimal := big.NewInt(0).Mul(amt1, info.Amt0)
-		amountAOptimal = big.NewInt(0).Div(amountAOptimal, info.Amt1)
+		if amountAOptimal.Cmp(big.NewInt(0)) < 1 {
+			return fmt.Errorf("The amount of tokens exceeds the 0")
+		}
 
+		amountAOptimal = big.NewInt(0).Div(amountAOptimal, info.Amt1)
 		if amountAOptimal.Cmp(amt0Min) < 0 {
 			return fmt.Errorf("The amount of tokens exceeds the min")
 		} else {
