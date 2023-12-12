@@ -198,39 +198,49 @@ func (v *Verifys) verifySwapAdd(swap *utils.SwapInfo) error {
 		return fmt.Errorf("The contract does not exist err %s", err.Error())
 	}
 
-	amountBOptimal := big.NewInt(0).Mul(amt0, info.Amt1)
-	if amountBOptimal.Cmp(big.NewInt(0)) < 1 {
-		return fmt.Errorf("The amount of tokens exceeds the 0")
-	}
+	if info.LiquidityTotal.Cmp(big.NewInt(0)) == 0 {
 
-	amountBOptimal = big.NewInt(0).Div(amountBOptimal, info.Amt0)
-
-	if amountBOptimal.Cmp(amt1Min) < 0 {
-
-		amountAOptimal := big.NewInt(0).Mul(amt1, info.Amt0)
-		if amountAOptimal.Cmp(big.NewInt(0)) < 1 {
-			return fmt.Errorf("The amount of tokens exceeds the 0")
-		}
-
-		amountAOptimal = big.NewInt(0).Div(amountAOptimal, info.Amt1)
-		if amountAOptimal.Cmp(amt0Min) < 0 {
-			return fmt.Errorf("The amount of tokens exceeds the min")
-		} else {
-			if amountAOptimal.Cmp(sum0) > 0 {
-				return fmt.Errorf("The amount of tokens exceeds the balance")
-			}
-
-			if amt1.Cmp(sum1) > 0 {
-				return fmt.Errorf("The amount of tokens exceeds the balance")
-			}
-		}
-	} else {
 		if amt0.Cmp(sum0) > 0 {
 			return fmt.Errorf("The amount of tokens exceeds the balance")
 		}
 
-		if amountBOptimal.Cmp(sum1) > 0 {
-			return fmt.Errorf("The amount of tokens exceeds the max")
+		if amt1.Cmp(sum1) > 0 {
+			return fmt.Errorf("The amount of tokens exceeds the balance")
+		}
+
+	} else {
+		amountBOptimal := big.NewInt(0).Mul(amt0, info.Amt1)
+
+		if amountBOptimal.Cmp(big.NewInt(0)) < 1 {
+			return fmt.Errorf("The amount of tokens exceeds the 0")
+		}
+		amountBOptimal = big.NewInt(0).Div(amountBOptimal, info.Amt0)
+		if amountBOptimal.Cmp(amt1Min) < 0 {
+			amountAOptimal := big.NewInt(0).Mul(amt1, info.Amt0)
+			if amountAOptimal.Cmp(big.NewInt(0)) < 1 {
+				return fmt.Errorf("The amount of tokens exceeds the 0")
+			}
+			amountAOptimal = big.NewInt(0).Div(amountAOptimal, info.Amt1)
+
+			if amountAOptimal.Cmp(amt0Min) < 0 {
+				return fmt.Errorf("The amount of tokens exceeds the min")
+			} else {
+				if amountAOptimal.Cmp(sum0) > 0 {
+					return fmt.Errorf("The amount of tokens exceeds the balance")
+				}
+
+				if amt1.Cmp(sum1) > 0 {
+					return fmt.Errorf("The amount of tokens exceeds the balance")
+				}
+			}
+		} else {
+			if amt0.Cmp(sum0) > 0 {
+				return fmt.Errorf("The amount of tokens exceeds the balance")
+			}
+
+			if amountBOptimal.Cmp(sum1) > 0 {
+				return fmt.Errorf("The amount of tokens exceeds the max")
+			}
 		}
 	}
 
