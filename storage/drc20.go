@@ -385,6 +385,7 @@ func (c *DBClient) FindDrc20All(filter *utils.Drc20Params) ([]*FindDrc20AllResul
 		result.MaxAmt, _ = utils.ConvetStr(max)
 		result.MintAmt, _ = utils.ConvetStr(amt)
 		result.Lim, _ = utils.ConvetStr(lim)
+		result.Inscription = result.Inscription + "i0"
 
 		results = append(results, result)
 	}
@@ -437,6 +438,8 @@ func (c *DBClient) FindDrc20ByTick(tick string) (*FindDrc20AllResult, error) {
 		result.MaxAmt, _ = utils.ConvetStr(max)
 		result.MintAmt, _ = utils.ConvetStr(amt)
 		result.Lim, _ = utils.ConvetStr(lim)
+		result.Inscription = result.Inscription + "i0"
+
 		return result, nil
 	}
 	return nil, nil
@@ -512,6 +515,7 @@ func (c *DBClient) FindDrc20AllByAddress(receive_address string, limit, offset i
 			}
 		}
 		result.Amt = amt_big
+		result.Inscription = result.Inscription + "i0"
 
 		results = append(results, result)
 	}
@@ -558,6 +562,7 @@ func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*Fin
 			}
 		}
 		result.Amt = amt_big
+		result.Inscription = result.Inscription + "i0"
 		return result, nil
 	}
 
@@ -625,7 +630,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		card.Max, _ = utils.ConvetStr(*max)
 		card.Amt, _ = utils.ConvetStr(*amt)
 		card.Lim, _ = utils.ConvetStr(*lim)
-		card.Inscription = card.Drc20TxHash
+		card.Inscription = card.Drc20TxHash + "i0"
 
 		cards = append(cards, card)
 	}
