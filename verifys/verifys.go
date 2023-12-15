@@ -256,7 +256,9 @@ func (v *Verifys) verifySwapNow(swap *utils.SwapInfo) error {
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, swap.Amt0Min, swap.Amt1Min)
 
 	info, err := v.dbc.FindSwapLiquidity(tick0, tick1)
-
+	if info == nil {
+		return fmt.Errorf("The contract does not exist")
+	}
 	amtMap := make(map[string]*big.Int)
 	amtMap[info.Tick0] = info.Amt0
 	amtMap[info.Tick1] = info.Amt1
