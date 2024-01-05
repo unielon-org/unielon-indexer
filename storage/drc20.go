@@ -570,12 +570,31 @@ func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*Fin
 }
 
 func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, limit, offset int64) ([]*OrderResult, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address, receive_address,  drc20_tx_hash, block_hash, block_number, repeat_mint, create_date, order_status, to_address  FROM cardinals_info "
+	query := `
+SELECT order_id,
+       p,
+       op,
+       tick,
+       max_,
+       lim_,
+       amt,
+       fee_address,
+       receive_address,
+       drc20_tx_hash,
+       block_hash,
+       block_number,
+       repeat_mint,
+       create_date,
+       order_status,
+       to_address,
+       di.drc20_tx_hash
+FROM cardinals_info_new ci left join drc20_info di on ci.tick = di.tick 
+`
 	where := "where"
 	whereAges := []any{}
 
 	if receiveAddress != "" {
-		where += " (receive_address = ? or to_address = ?) "
+		where += " (ci.receive_address = ? or ci.to_address = ?) "
 		whereAges = append(whereAges, receiveAddress)
 		whereAges = append(whereAges, receiveAddress)
 	}
@@ -584,7 +603,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		if where != "where" {
 			where += " and "
 		}
-		where += "  tick = ? "
+		where += "  ci.tick = ? "
 		whereAges = append(whereAges, tick)
 	}
 
@@ -592,7 +611,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		if where != "where" {
 			where += " and "
 		}
-		where += "  drc20_tx_hash = ? "
+		where += "  ci.drc20_tx_hash = ? "
 		whereAges = append(whereAges, hash)
 	}
 
@@ -600,11 +619,11 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		if where != "where" {
 			where += " and "
 		}
-		where += "  block_number = ? "
+		where += "  ci.block_number = ? "
 		whereAges = append(whereAges, number)
 	}
 
-	order := " order by update_date desc "
+	order := " order by ci.update_date desc "
 	lim := " LIMIT ? OFFSET ?"
 	whereAges = append(whereAges, limit)
 	whereAges = append(whereAges, offset)
@@ -622,7 +641,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		var lim *string
 		var amt *string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress, &card.Drc20Inscription)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -631,6 +650,7 @@ func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, l
 		card.Amt, _ = utils.ConvetStr(*amt)
 		card.Lim, _ = utils.ConvetStr(*lim)
 		card.Inscription = card.Drc20TxHash + "i0"
+		card.Drc20Inscription = card.Drc20Inscription + "i0"
 
 		cards = append(cards, card)
 	}

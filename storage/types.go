@@ -28,26 +28,27 @@ type FindDrc20HoldersResult struct {
 }
 
 type OrderResult struct {
-	OrderId        string   `json:"order_id"`
-	P              string   `json:"p"`
-	Op             string   `json:"op"`
-	Tick           string   `json:"tick"`
-	Amt            *big.Int `json:"amt"`
-	Max            *big.Int `json:"max"`
-	Lim            *big.Int `json:"lim"`
-	Dec            int64    `json:"dec"`
-	Burn           string   `json:"burn"`
-	Func           string   `json:"func"`
-	Repeat         int64    `json:"repeat"`
-	Drc20TxHash    string   `json:"drc20_tx_hash"`
-	Inscription    string   `json:"inscription"`
-	BlockHash      string   `json:"block_hash"`
-	BlockNumber    int64    `json:"block_number"`
-	ReceiveAddress string   `json:"receive_address"`
-	ToAddress      string   `json:"to_address"`
-	FeeAddress     string   `json:"fee_address"`
-	OrderStatus    int64    `json:"order_status"`
-	CreateDate     string   `json:"create_date"`
+	OrderId          string   `json:"order_id"`
+	P                string   `json:"p"`
+	Op               string   `json:"op"`
+	Tick             string   `json:"tick"`
+	Amt              *big.Int `json:"amt"`
+	Max              *big.Int `json:"max"`
+	Lim              *big.Int `json:"lim"`
+	Dec              int64    `json:"dec"`
+	Burn             string   `json:"burn"`
+	Func             string   `json:"func"`
+	Repeat           int64    `json:"repeat"`
+	Drc20TxHash      string   `json:"drc20_tx_hash"`
+	Inscription      string   `json:"inscription"`
+	Drc20Inscription string   `json:"drc20_inscription"`
+	BlockHash        string   `json:"block_hash"`
+	BlockNumber      int64    `json:"block_number"`
+	ReceiveAddress   string   `json:"receive_address"`
+	ToAddress        string   `json:"to_address"`
+	FeeAddress       string   `json:"fee_address"`
+	OrderStatus      int64    `json:"order_status"`
+	CreateDate       string   `json:"create_date"`
 }
 
 type SwapPrice struct {
