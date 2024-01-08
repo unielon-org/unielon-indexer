@@ -571,25 +571,25 @@ func (c *DBClient) FindDrc20AllByAddressTick(receive_address, tick string) (*Fin
 
 func (c *DBClient) FindOrders(receiveAddress, tick, hash string, number int64, limit, offset int64) ([]*OrderResult, int64, error) {
 	query := `
-SELECT order_id,
-       p,
-       op,
-       tick,
-       max_,
-       lim_,
-       amt,
-       fee_address,
-       receive_address,
-       drc20_tx_hash,
-       fee_tx_hash,
-       block_hash,
-       block_number,
-       repeat_mint,
-       create_date,
-       order_status,
-       to_address,
-       di.drc20_tx_hash
-FROM cardinals_info ci left join drc20_info di on ci.tick = di.tick 
+SELECT  ci.order_id,
+        ci.p,
+        ci.op,
+       ci.tick,
+       ci.max_,
+       ci.lim_,
+        ci.amt,
+        ci.fee_address,
+       ci.receive_address,
+       ci.drc20_tx_hash,
+        ci.fee_tx_hash,
+        ci.block_hash,
+        ci.block_number,
+        ci.repeat_mint,
+       ci.create_date,
+        ci.order_status,
+        ci.to_address,
+       di.drc20_tx_hash as drc20_inscription
+FROM cardinals_info ci left join drc20_info di on ci.tick = di.tick  
 `
 	where := "where"
 	whereAges := []any{}
@@ -612,7 +612,7 @@ FROM cardinals_info ci left join drc20_info di on ci.tick = di.tick
 		if where != "where" {
 			where += " and "
 		}
-		where += "  ci.drc20_tx_hash = ? "
+		where += " ci.drc20_tx_hash = ? "
 		whereAges = append(whereAges, hash)
 	}
 
@@ -625,7 +625,7 @@ FROM cardinals_info ci left join drc20_info di on ci.tick = di.tick
 	}
 
 	order := " order by ci.update_date desc "
-	lim := " LIMIT ? OFFSET ?"
+	lim := " LIMIT ? OFFSET ? "
 	whereAges = append(whereAges, limit)
 	whereAges = append(whereAges, offset)
 
@@ -656,7 +656,7 @@ FROM cardinals_info ci left join drc20_info di on ci.tick = di.tick
 		cards = append(cards, card)
 	}
 
-	query1 := "SELECT count(order_id)  FROM cardinals_info "
+	query1 := "SELECT count(order_id)  FROM cardinals_info ci "
 
 	rows1, err := c.SqlDB.Query(query1+where, whereAges...)
 	if err != nil {

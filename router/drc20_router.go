@@ -193,7 +193,7 @@ func (r *Router) FindOrders(c *gin.Context) {
 
 	orders, total, err := r.dbc.FindOrders(p.Address, p.Tick, p.Hash, p.Number, p.Limit, p.OffSet)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, nil)
+		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
