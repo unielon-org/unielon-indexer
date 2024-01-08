@@ -589,7 +589,7 @@ SELECT order_id,
        order_status,
        to_address,
        di.drc20_tx_hash
-FROM cardinals_info_new ci left join drc20_info di on ci.tick = di.tick 
+FROM cardinals_info ci left join drc20_info di on ci.tick = di.tick 
 `
 	where := "where"
 	whereAges := []any{}
