@@ -28,6 +28,8 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 	}
 
 	card.OrderId = uuid.New().String()
+	card.FeeTxHash = tx.Vin[0].Txid
+
 	card.Drc20TxHash = tx.Hash
 	card.BlockHash = tx.BlockHash
 	card.BlockNumber = number

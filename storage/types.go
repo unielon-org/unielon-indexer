@@ -40,6 +40,7 @@ type OrderResult struct {
 	Func             string   `json:"func"`
 	Repeat           int64    `json:"repeat"`
 	Drc20TxHash      string   `json:"drc20_tx_hash"`
+	FeeTxHash        string   `json:"fee_tx_hash"`
 	Inscription      string   `json:"inscription"`
 	Drc20Inscription string   `json:"drc20_inscription"`
 	BlockHash        string   `json:"block_hash"`

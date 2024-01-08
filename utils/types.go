@@ -91,6 +91,7 @@ type Cardinals struct {
 	Func           string   `json:"func"`
 	Repeat         int64    `json:"repeat"`
 	Drc20TxHash    string   `json:"drc20_tx_hash"`
+	FeeTxHash      string   `json:"fee_tx_hash"`
 	BlockNumber    int64    `json:"block_number"`
 	BlockHash      string   `json:"block_hash"`
 	ReceiveAddress string   `json:"receive_address"`

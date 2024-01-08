@@ -10,8 +10,8 @@ import (
 )
 
 func (c *DBClient) InstallCardinalsInfo(card *utils.Cardinals) error {
-	query := "INSERT INTO cardinals_info (order_id, p, op, tick, amt, max_, lim_, dec_, burn_, func_, receive_address, fee_address, to_address, drc20_tx_hash, repeat_mint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-	_, err := c.SqlDB.Exec(query, card.OrderId, card.P, card.Op, card.Tick, card.Amt.String(), card.Max.String(), card.Lim.String(), card.Dec, card.Burn, card.Func, card.ReceiveAddress, card.FeeAddress, card.ToAddress, card.Drc20TxHash, card.Repeat)
+	query := "INSERT INTO cardinals_info (order_id, p, op, tick, amt, max_, lim_, dec_, burn_, func_, receive_address, fee_address, to_address, drc20_tx_hash, fee_tx_hash, repeat_mint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	_, err := c.SqlDB.Exec(query, card.OrderId, card.P, card.Op, card.Tick, card.Amt.String(), card.Max.String(), card.Lim.String(), card.Dec, card.Burn, card.Func, card.ReceiveAddress, card.FeeAddress, card.ToAddress, card.Drc20TxHash, card.FeeTxHash, card.Repeat)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -302,7 +302,7 @@ func (c *DBClient) FindCardinalsInfoNewByNumber(number int64) ([]*utils.Cardinal
 }
 
 func (c *DBClient) FindCardinalsInfoNewByDrc20Hash(drc20Hash string) (*utils.Cardinals, error) {
-	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint, drc20_tx_hash, block_hash, block_number, receive_address, create_date, to_address FROM cardinals_info where drc20_tx_hash = ?"
+	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint, drc20_tx_hash, fee_tx_hash, block_hash, block_number, receive_address, create_date, to_address FROM cardinals_info where drc20_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, drc20Hash)
 	if err != nil {
 		return nil, err
@@ -313,7 +313,7 @@ func (c *DBClient) FindCardinalsInfoNewByDrc20Hash(drc20Hash string) (*utils.Car
 		card := &utils.Cardinals{}
 		var max, amt, lim string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &amt, &max, &lim, &card.Repeat, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.ReceiveAddress, &card.CreateDate, &card.ToAddress)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &amt, &max, &lim, &card.Repeat, &card.Drc20TxHash, &card.FeeTxHash, &card.BlockHash, &card.BlockNumber, &card.ReceiveAddress, &card.CreateDate, &card.ToAddress)
 		for err != nil {
 			return nil, err
 		}
@@ -581,6 +581,7 @@ SELECT order_id,
        fee_address,
        receive_address,
        drc20_tx_hash,
+       fee_tx_hash,
        block_hash,
        block_number,
        repeat_mint,
@@ -641,7 +642,7 @@ FROM cardinals_info_new ci left join drc20_info di on ci.tick = di.tick
 		var lim *string
 		var amt *string
 
-		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.Drc20TxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress, &card.Drc20Inscription)
+		err := rows.Scan(&card.OrderId, &card.P, &card.Op, &card.Tick, &max, &lim, &amt, &card.FeeAddress, &card.ReceiveAddress, &card.Drc20TxHash, &card.FeeTxHash, &card.BlockHash, &card.BlockNumber, &card.Repeat, &card.CreateDate, &card.OrderStatus, &card.ToAddress, &card.Drc20Inscription)
 		if err != nil {
 			return nil, 0, err
 		}
