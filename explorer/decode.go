@@ -60,9 +60,20 @@ func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte,
 }
 
 func writeCSV(data [][]string, filename string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
+
+	var file *os.File
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		// 文件不存在，创建文件
+		file, err = os.Create(filename)
+		if err != nil {
+			return err
+		}
+	} else {
+		// 文件存在，以追加模式打开
+		file, err = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			return err
+		}
 	}
 	defer file.Close()
 
