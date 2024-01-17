@@ -48,12 +48,12 @@ func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte,
 	if err != nil {
 		return nil, nil, fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
-
-	data := [][]string{
-		{hex.EncodeToString(pushedData[3]), hex.EncodeToString(pushedData[4]), tx.Hash},
+	if len(pushedData) > 4 {
+		data := [][]string{
+			{hex.EncodeToString(pushedData[3]), hex.EncodeToString(pushedData[4]), tx.Hash},
+		}
+		writeCSV(data, "output.csv")
 	}
-
-	writeCSV(data, "output.csv")
 
 	return param, pushedData[3], nil
 
