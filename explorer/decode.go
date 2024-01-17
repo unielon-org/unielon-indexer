@@ -1,6 +1,7 @@
 package explorer
 
 import (
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"github.com/dogecoinw/doged/btcjson"
 	"github.com/dogecoinw/doged/txscript"
 	"github.com/unielon-org/unielon-indexer/utils"
+	"os"
 )
 
 func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte, error) {
@@ -47,6 +49,31 @@ func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte,
 		return nil, nil, fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
 
+	data := [][]string{
+		{hex.EncodeToString(pushedData[3]), hex.EncodeToString(pushedData[4]), tx.Hash},
+	}
+
+	writeCSV(data, "output.csv")
+
 	return param, pushedData[3], nil
 
+}
+
+func writeCSV(data [][]string, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, record := range data {
+		if err := writer.Write(record); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
