@@ -43,7 +43,7 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 
 		card.ReceiveAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 
-		if tx.Vout[1].ScriptPubKey.Addresses[0] != e.feeAddress {
+		if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
 			return nil, fmt.Errorf("the address is incorrect")
 		}
 
@@ -76,7 +76,7 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 			return nil, fmt.Errorf("The balance is insufficient")
 		}
 
-		if tx.Vout[1].ScriptPubKey.Addresses[0] != e.feeAddress {
+		if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
 			return nil, fmt.Errorf("The address is incorrect")
 		}
 	}

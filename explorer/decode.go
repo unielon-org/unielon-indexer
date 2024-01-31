@@ -1,7 +1,6 @@
 package explorer
 
 import (
-	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -9,7 +8,6 @@ import (
 	"github.com/dogecoinw/doged/btcjson"
 	"github.com/dogecoinw/doged/txscript"
 	"github.com/unielon-org/unielon-indexer/utils"
-	"os"
 )
 
 func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte, error) {
@@ -48,43 +46,69 @@ func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte,
 	if err != nil {
 		return nil, nil, fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
-	if len(pushedData) > 4 {
-		data := [][]string{
-			{hex.EncodeToString(pushedData[3]), hex.EncodeToString(pushedData[4]), tx.Hash},
-		}
-		writeCSV(data, "output.csv")
-	}
 
 	return param, pushedData[3], nil
 
 }
 
-func writeCSV(data [][]string, filename string) error {
+func (e *Explorer) reDecodeNft(tx *btcjson.TxRawResult) (*utils.NFTParams, error) {
 
-	var file *os.File
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		// 文件不存在，创建文件
-		file, err = os.Create(filename)
-		if err != nil {
-			return err
+	param := &utils.NFTParams{}
+	imageDatas := []byte{}
+
+	for i, in := range tx.Vin {
+
+		if in.ScriptSig == nil {
+			return nil, errors.New("ScriptSig is nil")
 		}
-	} else {
-		// 文件存在，以追加模式打开
-		file, err = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0644)
+
+		scriptbytes, err := hex.DecodeString(in.ScriptSig.Hex)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("hex.DecodeString err: %s", err.Error())
+		}
+
+		pkScript, err := txscript.PushedData(scriptbytes)
+		if err != nil {
+			return nil, fmt.Errorf("PushedData err: %s", err.Error())
+		}
+
+		if len(pkScript) < 3 {
+			return nil, errors.New("pkScript length < 3")
+		}
+		if i == 0 {
+			pushedData, err := txscript.PushedData(pkScript[len(pkScript)-1])
+			if err != nil {
+				return nil, fmt.Errorf("PushedData err: %s", err.Error())
+			}
+
+			if len(pushedData) < 4 {
+				return nil, errors.New("len(pushedData) < 4")
+			}
+
+			param = &utils.NFTParams{}
+			err = json.Unmarshal(pushedData[3], param)
+			if err != nil {
+				return nil, fmt.Errorf("json.Unmarshal err: %s", err.Error())
+			}
+			continue
+		}
+
+		pushedData, err := txscript.PushedData(pkScript[len(pkScript)-1])
+		if err != nil {
+			return nil, fmt.Errorf("PushedData err: %s", err.Error())
+		}
+
+		imageDatas = append(imageDatas, pushedData[len(pushedData)-1]...)
+
+		for _, pk := range pkScript {
+			if pk == nil {
+				break
+			}
+			imageDatas = append(imageDatas, pk...)
 		}
 	}
-	defer file.Close()
 
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
+	param.Image = utils.PngToBase64(imageDatas)
 
-	for _, record := range data {
-		if err := writer.Write(record); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return param, nil
 }

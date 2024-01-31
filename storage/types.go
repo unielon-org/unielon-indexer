@@ -56,3 +56,37 @@ type SwapPrice struct {
 	Tick      string  `json:"tick"`
 	LastPrice float64 `json:"last_price"`
 }
+
+// NFT model
+type NftCollect struct {
+	Tick          string  `json:"tick"`
+	TickSum       int64   `json:"tick_sum"`
+	Total         int64   `json:"total"`
+	Prompt        string  `json:"prompt"`
+	Image         string  `json:"image"`
+	HolderAddress string  `json:"holder_address"`
+	DeployHash    string  `json:"deploy_hash"`
+	Transactions  int64   `json:"transactions"`
+	Holders       int64   `json:"holders"`
+	Introduction  *string `json:"introduction"`
+	WhitePaper    *string `json:"white_paper"`
+	Official      *string `json:"official"`
+	Telegram      *string `json:"telegram"`
+	Discorad      *string `json:"discorad"`
+	Twitter       *string `json:"twitter"`
+	Facebook      *string `json:"facebook"`
+	Github        *string `json:"github"`
+	IsCheck       uint64  `json:"is_check"`
+	UpdateDate    int64   `json:"update_date"`
+	CreateDate    int64   `json:"create_date"`
+}
+
+type NftCollectAddress struct {
+	Tick          string `json:"tick"`
+	TickId        int64  `json:"tick_id"`
+	Image         string `json:"image"`
+	HolderAddress string `json:"holder_address"`
+	Transactions  int64  `json:"transactions"`
+	UpdateDate    int64  `json:"update_date"`
+	CreateDate    int64  `json:"create_date"`
+}

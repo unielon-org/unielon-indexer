@@ -197,6 +197,7 @@ func (e Explorer) swapNow(swap *utils.SwapInfo) error {
 
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, nil, nil, nil, nil)
 
+	// 查询有没有创建过
 	info, err := e.dbc.FindSwapLiquidity(tick0, tick1)
 	if err != nil {
 		return fmt.Errorf("swapNow FindSwapLiquidity error: %v", err)

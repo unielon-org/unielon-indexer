@@ -15,10 +15,12 @@ import (
 )
 
 const (
-	startInterval = 1 * time.Second
+	startInterval = 3 * time.Second
 
+	feeAddress       = "D92uJjQ9eHUcv2GjJUgp6m58V8wYvGV2g9"
 	wdogeFeeAddress  = "D86Dc4n49LZDiXvB41ds2XaDAP1BFjP1qy"
 	wdogeCoolAddress = "DKMyk8cfSTGfnCVXfmo8gXta9F6gziu7Z5"
+	nftFeeAddress    = "DBFQmJ5oGCgtnDVxUU7xEraztpEyqJHdxz"
 )
 
 var (
@@ -26,26 +28,24 @@ var (
 )
 
 type Explorer struct {
-	config     *config.Config
-	node       *rpcclient.Client
-	dbc        *storage.DBClient
-	verify     *verifys.Verifys
-	fromBlock  int64
-	feeAddress string
+	config    *config.Config
+	node      *rpcclient.Client
+	dbc       *storage.DBClient
+	verify    *verifys.Verifys
+	fromBlock int64
 
 	ctx context.Context
 	wg  *sync.WaitGroup
 }
 
-func NewExplorer(ctx context.Context, wg *sync.WaitGroup, rpcClient *rpcclient.Client, dbc *storage.DBClient, fromBlock int64, feeAddress string) *Explorer {
+func NewExplorer(ctx context.Context, wg *sync.WaitGroup, rpcClient *rpcclient.Client, dbc *storage.DBClient, fromBlock int64) *Explorer {
 	exp := &Explorer{
-		node:       rpcClient,
-		dbc:        dbc,
-		verify:     verifys.NewVerifys(dbc, feeAddress),
-		fromBlock:  fromBlock,
-		ctx:        ctx,
-		wg:         wg,
-		feeAddress: feeAddress,
+		node:      rpcClient,
+		dbc:       dbc,
+		verify:    verifys.NewVerifys(dbc),
+		fromBlock: fromBlock,
+		ctx:       ctx,
+		wg:        wg,
 	}
 	return exp
 }
@@ -209,6 +209,27 @@ func (e *Explorer) scan() error {
 						e.dbc.UpdateWDogeInfoErr(wdoge.OrderId, err.Error())
 						continue
 					}
+				}
+			} else if decode.P == "nft/ai" {
+
+				nft, err := e.nftDecode(transactionVerbose, e.fromBlock)
+				if err != nil {
+					log.Error("scanning", "nftDecode", err, "txhash", transactionVerbose.Txid)
+					continue
+				}
+
+				err = e.verify.VerifyNft(nft)
+				if err != nil {
+					log.Error("scanning", "VerifyNft", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateNftInfoErr(nft.OrderId, err.Error())
+					continue
+				}
+
+				err = e.nftDeployOrMintOrTransfer(nft, e.fromBlock)
+				if err != nil {
+					log.Error("scanning", "nftDeployOrMintOrTransfer", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateNftInfoErr(nft.OrderId, err.Error())
+					continue
 				}
 			}
 		}

@@ -53,11 +53,11 @@ func main() {
 	// Notice the notification parameter is nil since notifications are
 	rpcClient, _ := rpcclient.New(connCfg, nil)
 
-	exp := explorer.NewExplorer(ctx, wg, rpcClient, dbClient, cfg.Server.FromBlock, feeAddress)
+	exp := explorer.NewExplorer(ctx, wg, rpcClient, dbClient, cfg.Server.FromBlock)
 	wg.Add(1)
 	go exp.Start()
 
-	rt := router.NewRouter(dbClient, rpcClient, feeAddress)
+	rt := router.NewRouter(dbClient, rpcClient)
 
 	// Create a new Gin router instance
 	router := gin.Default()

@@ -77,6 +77,19 @@ type WDogeParams struct {
 	HolderAddress string `json:"holder_address"`
 }
 
+type NFTParams struct {
+	Op            string `json:"op"`
+	Tick          string `json:"tick"`
+	TickId        int64  `json:"tick_id"`
+	Total         int64  `json:"total"`
+	Model         string `json:"model"`
+	Prompt        string `json:"prompt"`
+	Seed          int64  `json:"seed"`
+	Image         string `json:"image"`
+	HolderAddress string `json:"holder_address"`
+	ToAddress     string `json:"to_address"`
+}
+
 // Models
 type Cardinals struct {
 	OrderId        string   `json:"order_id"`
@@ -162,4 +175,72 @@ type CardinalsRevert struct {
 	ToAddress   string   `json:"to_address"`
 	Amt         *big.Int `json:"amt"`
 	BlockNumber int64    `json:"block_number"`
+}
+
+// NFT
+type NFTInfo struct {
+	OrderId        string  `json:"order_id"`
+	Op             string  `json:"op"`
+	Tick           string  `json:"tick"`
+	TickId         int64   `json:"tick_id"`
+	Total          int64   `json:"total"`
+	Model          string  `json:"model"`
+	Prompt         string  `json:"prompt"`
+	Image          string  `json:"image"`
+	ImageData      []byte  `json:"image_data"`
+	HolderAddress  string  `json:"holder_address"`
+	ToAddress      string  `json:"to_address"`
+	AdminAddress   string  `json:"admin_address"`
+	FeeAddress     string  `json:"fee_address"`
+	FeeAddressAll  string  `json:"fee_address_all"`
+	FeeTxHash      string  `json:"fee_tx_hash"`
+	FeeTxIndex     uint32  `json:"fee_tx_index"`
+	FeeBlockNumber int64   `json:"fee_block_number"`
+	FeeBlockHash   string  `json:"fee_block_hash"`
+	NftTxHash      string  `json:"nft_tx_hash"`
+	NftTxRaw       string  `json:"nft_tx_raw"`
+	NftBlockNumber int64   `json:"nft_block_number"`
+	NftBlockHash   string  `json:"nft_block_hash"`
+	ErrInfo        *string `json:"err_info"`
+	OrderStatus    int64   `json:"order_status"`
+	UpdateDate     string  `json:"update_date"`
+	CreateDate     string  `json:"create_date"`
+}
+
+// NftCollect
+type NftCollect struct {
+	Tick          string `json:"tick"`
+	TickSum       int64  `json:"tick_sum"`
+	Total         int64  `json:"total"`
+	Model         string `json:"model"`
+	Prompt        string `json:"prompt"`
+	Image         string `json:"image"`
+	HolderAddress string `json:"holder_address"`
+	DeployHash    string `json:"deploy_hash"`
+	CreateDate    string `json:"create_date"`
+}
+
+// NftCollectAddress
+type NftCollectAddress struct {
+	Tick          string `json:"tick"`
+	TickId        int64  `json:"tick_id"`
+	Prompt        string `json:"prompt"`
+	NftPrompt     string `json:"nft_prompt"`
+	NftModel      string `json:"nft_model"`
+	Image         string `json:"image"`
+	DeployHash    string `json:"deploy_hash"`
+	HolderAddress string `json:"holder_address"`
+	CreateDate    string `json:"create_date"`
+}
+
+// NftRevert
+type NftRevert struct {
+	Tick        string `json:"tick"`
+	TickId      int64  `json:"tick_id"`
+	FromAddress string `json:"from_address"`
+	ToAddress   string `json:"to_address"`
+	BlockNumber int64  `json:"block_number"`
+	Prompt      string `json:"prompt"`
+	Image       string `json:"image"`
+	DeployHash  string `json:"deploy_hash"`
 }

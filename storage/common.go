@@ -125,3 +125,98 @@ func (c *DBClient) Burn(tx *sql.Tx, tick, from string, amt *big.Int, fork bool, 
 
 	return nil
 }
+
+func (c *DBClient) TransferNft(tx *sql.Tx, tick, from, to string, tickId int64, fork bool, height int64) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	log.Info("explorer", "TransferNft", "start", "tick", tick, "from", from, "to", to, "tickId", tickId, "fork", fork)
+
+	update := "UPDATE nft_collect SET transactions = transactions + 1 WHERE tick = ?"
+	_, err := tx.Exec(update, tick)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	update1 := "UPDATE  nft_collect_address SET holder_address = ? WHERE tick = ? AND tick_id = ? AND holder_address = ?"
+	_, err = tx.Exec(update1, to, tick, tickId, from)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if !fork {
+		err = c.InstallNftRevert(tx, tick, from, to, tickId, height, "", "", "")
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *DBClient) MintNft(tx *sql.Tx, tick, from string, tickId int64, prompt, image, txHash string, fork bool, height int64) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	log.Info("explorer", "MintNft", "start", "tick", tick, "from", from, "tickId", tickId)
+
+	update := "UPDATE nft_collect SET transactions = transactions + 1, tick_sum = tick_sum + 1  WHERE tick = ?"
+	_, err := tx.Exec(update, tick)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	query := "SELECT tick_sum FROM nft_collect WHERE tick = ?"
+	row := tx.QueryRow(query, tick)
+	var tickSum int64
+	err = row.Scan(&tickSum)
+	if err != nil {
+		return err
+	}
+
+	update2 := "INSERT INTO nft_collect_address (tick, tick_id, prompt, image, holder_address, deploy_hash) VALUES (?, ?, ?, ?, ?, ?)"
+	_, err = tx.Exec(update2, tick, tickSum, prompt, image, from, txHash)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if !fork {
+		err = c.InstallNftRevert(tx, tick, "", from, tickId, height, prompt, image, txHash)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *DBClient) BurnNft(tx *sql.Tx, tick, from string, tickId int64, fork bool, height int64) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	log.Info("explorer", "BurnNft", "start", "tick", tick, "from", from, "tickId", tickId)
+	update := "UPDATE nft_collect SET transactions = transactions + 1, tick_sum = tick_sum - 1 WHERE tick = ?"
+	_, err := tx.Exec(update, tick)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	update1 := "DELETE FROM nft_collect_address WHERE tick = ? AND tick_id = ? AND holder_address = ?"
+	_, err = tx.Exec(update1, tick, tickId, from)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if !fork {
+		err = c.InstallNftRevert(tx, tick, from, "", tickId, height, "", "", "")
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return nil
+}

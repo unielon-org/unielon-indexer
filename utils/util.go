@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/base64"
 	"fmt"
 	"math"
 	"math/big"
@@ -116,6 +117,30 @@ func ConvertWDoge(params *WDogeParams) (*WDogeInfo, error) {
 	return swap, nil
 }
 
+func ConvertNft(params *NFTParams) (*NFTInfo, error) {
+	nft := &NFTInfo{
+		Op:            params.Op,
+		Tick:          strings.ToUpper(params.Tick),
+		TickId:        params.TickId,
+		Total:         params.Total,
+		Model:         params.Model,
+		Prompt:        params.Prompt,
+		Image:         params.Image,
+		HolderAddress: params.HolderAddress,
+		ToAddress:     params.ToAddress,
+	}
+
+	if params.Op != "transfer" {
+		var err error
+		nft.ImageData, err = Base64ToPng(nft.Image)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nft, nil
+}
+
 func SortTokens(Tick0 string, Tick1 string, Amt0, Amt1, Amt0Min, Amt1Min *big.Int) (string, string, *big.Int, *big.Int, *big.Int, *big.Int) {
 	if Tick0 > Tick1 {
 		return Tick1, Tick0, Amt1, Amt0, Amt1Min, Amt0Min
@@ -145,4 +170,17 @@ func Float64ToBigInt(input float64) *big.Int {
 
 	result := int64(rounded)
 	return big.NewInt(result)
+}
+
+func Base64ToPng(base64Str string) ([]byte, error) {
+	imageBytes, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		panic(err)
+	}
+	return imageBytes, nil
+}
+
+func PngToBase64(pngBytes []byte) string {
+	base64String := base64.StdEncoding.EncodeToString(pngBytes)
+	return base64String
 }

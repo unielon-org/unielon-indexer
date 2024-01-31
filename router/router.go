@@ -10,18 +10,16 @@ import (
 )
 
 type Router struct {
-	dbc        *storage.DBClient
-	node       *rpcclient.Client
-	verify     *verifys.Verifys
-	feeAddress string
+	dbc    *storage.DBClient
+	node   *rpcclient.Client
+	verify *verifys.Verifys
 }
 
-func NewRouter(dbc *storage.DBClient, node *rpcclient.Client, feeAddress string) *Router {
+func NewRouter(dbc *storage.DBClient, node *rpcclient.Client) *Router {
 	return &Router{
-		dbc:        dbc,
-		node:       node,
-		verify:     verifys.NewVerifys(dbc, feeAddress),
-		feeAddress: feeAddress,
+		dbc:    dbc,
+		node:   node,
+		verify: verifys.NewVerifys(dbc),
 	}
 }
 

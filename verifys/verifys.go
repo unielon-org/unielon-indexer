@@ -1,6 +1,7 @@
 package verifys
 
 import (
+	"errors"
 	"fmt"
 	"github.com/unielon-org/unielon-indexer/storage"
 	"github.com/unielon-org/unielon-indexer/utils"
@@ -9,14 +10,12 @@ import (
 )
 
 type Verifys struct {
-	feeAddress string
-	dbc        *storage.DBClient
+	dbc *storage.DBClient
 }
 
-func NewVerifys(dbc *storage.DBClient, feeAddress string) *Verifys {
+func NewVerifys(dbc *storage.DBClient) *Verifys {
 	return &Verifys{
-		feeAddress: feeAddress,
-		dbc:        dbc,
+		dbc: dbc,
 	}
 }
 
@@ -347,5 +346,84 @@ func (v *Verifys) verifyWDogeDeposit(wdoge *utils.WDogeInfo) error {
 }
 
 func (v *Verifys) verifyWDogeWithdraw(wdoge *utils.WDogeInfo) error {
+	return nil
+}
+
+func (v *Verifys) VerifyNft(nft *utils.NFTInfo) error {
+	switch nft.Op {
+	case "deploy":
+		return v.verifyNftDeploy(nft)
+	case "mint":
+		return v.verifyNftMint(nft)
+	case "transfer":
+		return v.verifyNftTransfer(nft)
+	default:
+		return fmt.Errorf("do not support the type of tokens")
+	}
+}
+
+func (v *Verifys) verifyNftDeploy(nft *utils.NFTInfo) error {
+
+	if len(nft.Tick) < 2 || len(nft.Tick) > 32 {
+		return fmt.Errorf("the token symbol must be 2 or 32 letters")
+	}
+
+	if nft.Total < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	// 查询存在这个代币吗
+	_, err := v.dbc.FindNftCollectByTick(nft.Tick)
+	if err == nil {
+		return fmt.Errorf("has been deployed contracts")
+	}
+
+	// 查询carid 持币量
+	sum, err := v.dbc.FindDrc20AddressInfoByTick("CARDI", nft.HolderAddress)
+	if err != nil || sum == nil {
+		return errors.New("Not Enough Tokens ")
+	}
+
+	// 判断
+
+	cardiTotal := big.NewInt(840000000000)
+	if sum.Cmp(cardiTotal) < 0 {
+		return fmt.Errorf("the amount of tokens exceeds the balance")
+	}
+
+	return nil
+}
+
+func (v *Verifys) verifyNftMint(nft *utils.NFTInfo) error {
+
+	if len(nft.Tick) < 2 || len(nft.Tick) > 32 {
+		return fmt.Errorf("the token symbol must be 2 or 32 letters")
+	}
+
+	nftc, err := v.dbc.FindNftCollectByTick(nft.Tick)
+	if err != nil {
+		return fmt.Errorf("the contract does not exist")
+	}
+
+	if nftc.Total <= nftc.TickSum {
+		return fmt.Errorf("the amount of tokens exceeds the maximum")
+	}
+
+	return nil
+}
+
+func (v *Verifys) verifyNftTransfer(nft *utils.NFTInfo) error {
+
+	if nft.TickId < 0 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	tx, _ := v.dbc.SqlDB.Begin()
+	_, err := v.dbc.FindNftCollectAddressByTickAndId(tx, nft.Tick, nft.HolderAddress, nft.TickId)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+	tx.Commit()
 	return nil
 }
