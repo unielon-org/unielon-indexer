@@ -77,7 +77,13 @@ func (e *Explorer) fork(height int64) error {
 		return fmt.Errorf("swapFork UpdateWDogeInfoFork error: %v", err)
 	}
 
-	swapReverts, err := e.dbc.FindRevertByNumber(height)
+	err = e.mysql.UpdateNftInfoFork(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("fork UpdateNftInfoFork error: %v", err)
+	}
+
+	swapReverts, err := e.mysql.FindSwapRevertByNumber(height)
 	if err != nil {
 		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
 	}
@@ -103,6 +109,37 @@ func (e *Explorer) fork(height int64) error {
 	}
 
 	err = e.dbc.DelRevert(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	nftReverts, err := e.mysql.FindNftRevertByNumber(height)
+	if err != nil {
+		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
+	}
+
+	for _, revert := range nftReverts {
+		if revert.FromAddress == "" {
+			err = e.mysql.BurnNft(tx, revert.Tick, revert.ToAddress, revert.TickId)
+			tx.Rollback()
+			return fmt.Errorf("swapFork Burn error: %v", err)
+		}
+
+		if revert.ToAddress == "" {
+			err = e.mysql.MintNft(tx, revert.Tick, revert.FromAddress, revert.TickId, revert.Prompt, revert.Image, revert.ImagePath, revert.DeployHash, true, height)
+			tx.Rollback()
+			return fmt.Errorf("swapFork Mint error: %v", err)
+		}
+
+		err = e.mysql.TransferNft(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.TickId, true, height)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("swapFork Transfer error: %v", err)
+		}
+	}
+
+	err = e.mysql.DelNftRevert(tx, height)
 	if err != nil {
 		tx.Rollback()
 		return err

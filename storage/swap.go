@@ -163,7 +163,7 @@ func (c *DBClient) SwapRemove(swap *utils.SwapInfo, reservesAddress string, amt0
 }
 
 // SwapNow
-func (c *DBClient) SwapNow(swap *utils.SwapInfo, reservesAddress string, amtin, amtout, amtoutFeeCommunity, amtoutFeeCommunityOut *big.Int) error {
+func (c *DBClient) SwapNow(swap *utils.SwapInfo, reservesAddress string, amtin, amtout, amtoutFeeCommunity *big.Int) error {
 
 	tx, err := c.SqlDB.Begin()
 	if err != nil {
@@ -188,11 +188,11 @@ func (c *DBClient) SwapNow(swap *utils.SwapInfo, reservesAddress string, amtin, 
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick1, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunityOut, false, swap.SwapBlockNumber)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+	//err = c.Transfer(tx, swap.Tick1, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunityOut, false, swap.SwapBlockNumber)
+	//if err != nil {
+	//	tx.Rollback()
+	//	return err
+	//}
 
 	err = c.UpdateLiquidity(tx, swap.Tick)
 	if err != nil {

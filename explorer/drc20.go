@@ -44,15 +44,15 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 		card.ReceiveAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 
 		if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
-			return nil, fmt.Errorf("the address is incorrect")
+			return nil, fmt.Errorf("The address is incorrect")
 		}
 
 		if tx.Vout[0].Value != 0.001 {
-			return nil, fmt.Errorf("the amount of tokens exceeds the 0.0001")
+			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
 		}
 
 		if tx.Vout[1].Value < 100 {
-			return nil, fmt.Errorf("the balance is insufficient")
+			return nil, fmt.Errorf("The balance is insufficient")
 		}
 	}
 
@@ -69,7 +69,7 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 		}
 
 		if tx.Vout[0].Value != 0.001*float64(card.Repeat) {
-			return nil, fmt.Errorf("the amount of tokens exceeds the 0.001")
+			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
 		}
 
 		if tx.Vout[1].Value < float64(card.Repeat)*0.5 {

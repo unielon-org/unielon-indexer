@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	MINI_LIQUIDITY = 20
+	MINI_LIQUIDITY = 1000
 )
 
 func (e *Explorer) swapDecode(tx *btcjson.TxRawResult, pushedData []byte, number int64) (*utils.SwapInfo, error) {
@@ -31,6 +31,7 @@ func (e *Explorer) swapDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	}
 
 	swap.OrderId = uuid.New().String()
+	swap.FeeTxHash = tx.Vin[0].Txid
 	swap.SwapTxHash = tx.Hash
 	swap.SwapBlockHash = tx.BlockHash
 	swap.SwapBlockNumber = number
@@ -90,6 +91,8 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 		liquidityBase := new(big.Int).Sqrt(new(big.Int).Mul(swap.Amt0, swap.Amt1))
 		if liquidityBase.Cmp(big.NewInt(MINI_LIQUIDITY)) > 0 {
 			liquidityBase = new(big.Int).Sub(liquidityBase, big.NewInt(MINI_LIQUIDITY))
+		} else {
+			return fmt.Errorf("add liquidity must be greater than MINI_LIQUIDITY firstly")
 		}
 
 		swap.Amt0Out = swap.Amt0
@@ -104,6 +107,11 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 	} else if info.LiquidityTotal.Cmp(big.NewInt(0)) == 0 {
 
 		reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(swap.Tick0+swap.Tick1), &chaincfg.MainNetParams)
+
+		if swap.Amt0Min.Cmp(swap.Amt0) > 0 || swap.Amt1Min.Cmp(swap.Amt1) > 0 {
+			return fmt.Errorf("Error: amount minimun is greater than amount")
+		}
+
 		swap.Tick = swap.Tick0 + "-SWAP-" + swap.Tick1
 		liquidityBase := new(big.Int).Sqrt(new(big.Int).Mul(swap.Amt0, swap.Amt1))
 		if liquidityBase.Cmp(big.NewInt(MINI_LIQUIDITY)) > 0 {
@@ -128,18 +136,17 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 
 		amountBOptimal := big.NewInt(0).Mul(swap.Amt0, info.Amt1)
 		amountBOptimal = big.NewInt(0).Div(amountBOptimal, info.Amt0)
-		if amountBOptimal.Cmp(swap.Amt1Min) >= 0 {
+		if amountBOptimal.Cmp(swap.Amt1Min) >= 0 && swap.Amt1.Cmp(amountBOptimal) >= 0 {
 			amt0Out = swap.Amt0
 			amt1Out = amountBOptimal
 		} else {
 			amountAOptimal := big.NewInt(0).Mul(swap.Amt1, info.Amt0)
 			amountAOptimal = big.NewInt(0).Div(amountAOptimal, info.Amt1)
-			if amountAOptimal.Cmp(swap.Amt0Min) >= 0 {
+			if amountAOptimal.Cmp(swap.Amt0Min) >= 0 && swap.Amt0.Cmp(amountAOptimal) >= 0 {
 				amt0Out = amountAOptimal
 				amt1Out = swap.Amt1
 			} else {
-				log.Error("The amount of tokens exceeds the balance")
-				return nil
+				return fmt.Errorf("The amount of tokens exceeds the balance")
 			}
 		}
 
@@ -197,7 +204,6 @@ func (e Explorer) swapNow(swap *utils.SwapInfo) error {
 
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, nil, nil, nil, nil)
 
-	// 查询有没有创建过
 	info, err := e.dbc.FindSwapLiquidity(tick0, tick1)
 	if err != nil {
 		return fmt.Errorf("swapNow FindSwapLiquidity error: %v", err)
@@ -210,18 +216,18 @@ func (e Explorer) swapNow(swap *utils.SwapInfo) error {
 	amtMap[info.Tick1] = info.Amt1
 
 	amtfee0 := new(big.Int).Div(swap.Amt0, big.NewInt(100))
-	amt1 := new(big.Int).Mul(amtfee0, big.NewInt(2))
-
-	amtin := new(big.Int).Add(amtfee0, amt1)
+	amtin := new(big.Int).Mul(amtfee0, big.NewInt(3))
 	amtin = new(big.Int).Sub(swap.Amt0, amtin)
+
+	//amtin := new(big.Int).Add(amtfee0, amt1)
 
 	amtout := new(big.Int).Mul(amtin, amtMap[swap.Tick1])
 	amtout = new(big.Int).Div(amtout, new(big.Int).Add(amtMap[swap.Tick0], amtin))
 
-	amtfee1 := new(big.Int).Mul(amtfee0, amtMap[swap.Tick1])
-	amtfee1 = new(big.Int).Div(amtfee1, new(big.Int).Add(amtMap[swap.Tick0], amtfee0))
+	//amtfee1 := new(big.Int).Mul(amtfee0, amtMap[swap.Tick1])
+	//amtfee1 = new(big.Int).Div(amtfee1, new(big.Int).Add(amtMap[swap.Tick0], amtfee0))
 
-	err = e.dbc.SwapNow(swap, info.ReservesAddress, swap.Amt0, amtout, amtfee0, amtfee1)
+	err = e.dbc.SwapNow(swap, info.ReservesAddress, swap.Amt0, amtout, amtfee0)
 	if err != nil {
 		return fmt.Errorf("swapNow SwapNow error: %v", err)
 	}

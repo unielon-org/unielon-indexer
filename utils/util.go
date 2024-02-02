@@ -141,13 +141,6 @@ func ConvertNft(params *NFTParams) (*NFTInfo, error) {
 	return nft, nil
 }
 
-func SortTokens(Tick0 string, Tick1 string, Amt0, Amt1, Amt0Min, Amt1Min *big.Int) (string, string, *big.Int, *big.Int, *big.Int, *big.Int) {
-	if Tick0 > Tick1 {
-		return Tick1, Tick0, Amt1, Amt0, Amt1Min, Amt0Min
-	}
-	return Tick0, Tick1, Amt0, Amt1, Amt0Min, Amt1Min
-}
-
 func ConvetStr(number string) (*big.Int, error) {
 	if number != "" {
 		max_big, is_ok := new(big.Int).SetString(number, 10)
@@ -158,6 +151,13 @@ func ConvetStr(number string) (*big.Int, error) {
 	}
 
 	return big.NewInt(0), nil
+}
+
+func SortTokens(Tick0 string, Tick1 string, Amt0, Amt1, Amt0Min, Amt1Min *big.Int) (string, string, *big.Int, *big.Int, *big.Int, *big.Int) {
+	if Tick0 > Tick1 {
+		return Tick1, Tick0, Amt1, Amt0, Amt1Min, Amt0Min
+	}
+	return Tick0, Tick1, Amt0, Amt1, Amt0Min, Amt1Min
 }
 
 func Float64ToBigInt(input float64) *big.Int {

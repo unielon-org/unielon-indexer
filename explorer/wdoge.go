@@ -23,13 +23,15 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 		return nil, fmt.Errorf("ConvertWDoge err: %s", err.Error())
 	}
 
+	wdoge.Tick = "WDOGE(WRAPPED-DOGE)"
+
 	if len(tx.Vout) < 1 {
 		return nil, fmt.Errorf("op error, vout length is not 0")
 	}
 
 	if wdoge.Op == "deposit" {
 		if len(tx.Vout) != 3 {
-			return nil, fmt.Errorf("op error, vout length is not 3")
+			return nil, fmt.Errorf("mint op error, vout length is not 3")
 		}
 
 		fee := big.NewInt(0)
@@ -59,6 +61,7 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	}
 
 	wdoge.OrderId = uuid.New().String()
+	wdoge.FeeTxHash = tx.Vin[0].Txid
 	wdoge.WDogeTxHash = tx.Hash
 	wdoge.WDogeBlockHash = tx.BlockHash
 	wdoge.WDogeBlockNumber = number
@@ -112,7 +115,7 @@ func (e Explorer) dogeDeposit(wdoge *utils.WDogeInfo) error {
 		return err
 	}
 
-	exec := "update wdoge_info set wdoge_block_hash = ?, wdoge_block_number = ? where wdoge_tx_hash = ?"
+	exec := "update wdoge_info set wdoge_block_hash = ?, wdoge_block_number = ?, order_status = 0 where wdoge_tx_hash = ?"
 	_, err = tx.Exec(exec, wdoge.WDogeBlockHash, wdoge.WDogeBlockNumber, wdoge.WDogeTxHash)
 	if err != nil {
 		tx.Rollback()
@@ -140,7 +143,7 @@ func (e Explorer) dogeWithdraw(wdoge *utils.WDogeInfo) error {
 		return err
 	}
 
-	exec := "update wdoge_info set wdoge_block_hash = ?, wdoge_block_number = ? where wdoge_tx_hash = ?"
+	exec := "update wdoge_info set wdoge_block_hash = ?, wdoge_block_number = ?, order_status = 0 where wdoge_tx_hash = ?"
 	_, err = tx.Exec(exec, wdoge.WDogeBlockHash, wdoge.WDogeBlockNumber, wdoge.WDogeTxHash)
 	if err != nil {
 		tx.Rollback()

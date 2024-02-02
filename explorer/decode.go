@@ -32,7 +32,7 @@ func (e *Explorer) reDecode(tx *btcjson.TxRawResult) (*utils.BaseParams, []byte,
 		return nil, nil, errors.New("pkScript length < 3")
 	}
 
-	pushedData, err := txscript.PushedData(pkScript[2])
+	pushedData, err := txscript.PushedData(pkScript[len(pkScript)-1])
 	if err != nil {
 		return nil, nil, fmt.Errorf("PushedData err: %s", err.Error())
 	}
