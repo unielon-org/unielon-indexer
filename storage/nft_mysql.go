@@ -26,8 +26,8 @@ func (c *DBClient) InstallNftRevert(tx *sql.Tx, tick, from, to string, tickId in
 }
 
 func (c *DBClient) UpdateNftInfo(swap *utils.NFTInfo) error {
-	query := "update nft_info set fee_tx_hash = ?,  fee_tx_index = ?, fee_block_hash = ?, fee_block_number = ?, nft_tx_hash = ?, nft_tx_raw = ? where order_id = ?"
-	_, err := c.SqlDB.Exec(query, swap.FeeTxHash, swap.FeeTxIndex, swap.FeeBlockHash, swap.FeeBlockNumber, swap.NftTxHash, swap.NftTxRaw, swap.OrderId)
+	query := "update nft_info set fee_tx_hash = ?,  fee_tx_index = ?, fee_block_hash = ?, fee_block_number = ?, nft_tx_hash = ? where order_id = ?"
+	_, err := c.SqlDB.Exec(query, swap.FeeTxHash, swap.FeeTxIndex, swap.FeeBlockHash, swap.FeeBlockNumber, swap.NftTxHash, swap.OrderId)
 	if err != nil {
 		return err
 	}

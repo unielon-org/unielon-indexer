@@ -198,7 +198,6 @@ type NFTInfo struct {
 	FeeBlockNumber int64   `json:"fee_block_number"`
 	FeeBlockHash   string  `json:"fee_block_hash"`
 	NftTxHash      string  `json:"nft_tx_hash"`
-	NftTxRaw       string  `json:"nft_tx_raw"`
 	NftBlockNumber int64   `json:"nft_block_number"`
 	NftBlockHash   string  `json:"nft_block_hash"`
 	ErrInfo        *string `json:"err_info"`
