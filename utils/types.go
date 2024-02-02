@@ -132,6 +132,7 @@ type SwapInfo struct {
 	Liquidity       *big.Int `json:"liquidity"`
 	HolderAddress   string   `json:"holder_address"`
 	FeeAddress      string   `json:"fee_address"`
+	FeeTxHash       string   `json:"fee_tx_hash"`
 	SwapTxHash      string   `json:"swap_tx_hash"`
 	SwapBlockNumber int64    `json:"swap_block_number"`
 	SwapBlockHash   string   `json:"swap_block_hash"`
@@ -161,6 +162,7 @@ type WDogeInfo struct {
 	Amt              *big.Int `json:"amt"`
 	HolderAddress    string   `json:"holder_address"`
 	FeeAddress       string   `json:"fee_address"`
+	FeeTxHash        string   `json:"fee_tx_hash"`
 	WDogeTxHash      string   `json:"wdoge_tx_hash"`
 	WDogeBlockNumber int64    `json:"wdoge_block_number"`
 	WDogeBlockHash   string   `json:"wdoge_block_hash"`

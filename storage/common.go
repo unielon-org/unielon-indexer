@@ -193,7 +193,7 @@ func (c *DBClient) MintNft(tx *sql.Tx, tick, from string, tickId int64, prompt, 
 	return nil
 }
 
-func (c *DBClient) BurnNft(tx *sql.Tx, tick, from string, tickId int64, fork bool, height int64) error {
+func (c *DBClient) BurnNft(tx *sql.Tx, tick, from string, tickId int64) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	log.Info("explorer", "BurnNft", "start", "tick", tick, "from", from, "tickId", tickId)
@@ -211,12 +211,5 @@ func (c *DBClient) BurnNft(tx *sql.Tx, tick, from string, tickId int64, fork boo
 		return err
 	}
 
-	if !fork {
-		err = c.InstallNftRevert(tx, tick, from, "", tickId, height, "", "", "")
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
 	return nil
 }
