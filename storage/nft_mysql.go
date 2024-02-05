@@ -35,7 +35,7 @@ func (c *DBClient) UpdateNftInfo(swap *utils.NFTInfo) error {
 }
 
 func (c *DBClient) UpdateNftInfoFork(tx *sql.Tx, height int64) error {
-	query := "update nft_info set nft_block_number = 0, nfte_block_hash = '', order_status = 0 where nft_block_number > ?"
+	query := "update nft_info set nft_block_number = 0, nft_block_hash = '', order_status = 0 where nft_block_number > ?"
 	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
