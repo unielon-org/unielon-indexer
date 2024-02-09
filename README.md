@@ -17,7 +17,15 @@ Please check out [dogecoin](docs/dogecoin.md)
 go build.
 ```
 
-### 3. Run
+### 3. Download data
+
+https://github.com/unielon-org/unielon-indexer/releases
+
+Download the latest db data of releases and put it in the data directory
+
+
+
+### 4. Run
 ```go
 ./unielon-indexer
 ```
