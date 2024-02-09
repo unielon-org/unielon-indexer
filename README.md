@@ -1,11 +1,5 @@
 ﻿# unielon-indexer
 
-### Because the file is relatively large, file pull is required.
-
-```
-1. sudo apt-get install git-lfs 
-2. git lfs pull
-```
 
 ## start up
 
