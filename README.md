@@ -18,6 +18,12 @@ https://github.com/unielon-org/unielon-indexer/releases
 Download the latest db data of releases and put it in the data directory
 
 
+```shell
+cat unielon-indexer.zip.* > unielon-indexer.zip
+unzip unielon-indexer.zip
+```
+
+
 
 ### 4. Run
 ```go
