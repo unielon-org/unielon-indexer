@@ -141,6 +141,22 @@ func ConvertNft(params *NFTParams) (*NFTInfo, error) {
 	return nft, nil
 }
 
+func ConvertStake(params *StakeParams) (*StakeInfo, error) {
+	stake := &StakeInfo{
+		Op:            params.Op,
+		Tick:          strings.ToUpper(params.Tick),
+		HolderAddress: params.HolderAddress,
+	}
+
+	var err error
+	stake.Amt, err = ConvetStr(params.Amt)
+	if err != nil {
+		return nil, err
+	}
+
+	return stake, nil
+}
+
 func ConvetStr(number string) (*big.Int, error) {
 	if number != "" {
 		max_big, is_ok := new(big.Int).SetString(number, 10)

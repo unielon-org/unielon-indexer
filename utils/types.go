@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/dogecoinw/doged/btcutil"
 	"math/big"
 )
 
@@ -86,11 +87,29 @@ type NFTParams struct {
 	Prompt        string `json:"prompt"`
 	Seed          int64  `json:"seed"`
 	Image         string `json:"image"`
+	OriginImage   string `json:"originImage"`
 	HolderAddress string `json:"holder_address"`
 	ToAddress     string `json:"to_address"`
 }
 
-// Models
+type StakeParams struct {
+	Op            string `json:"op"`
+	Tick          string `json:"tick"`
+	Amt           string `json:"amt"`
+	HolderAddress string `json:"holder_address"`
+}
+
+// model
+type AddressInfo struct {
+	OrderId        string       `json:"order_id"`
+	PrveWif        *btcutil.WIF `json:"prve_wif"`
+	PubKey         string       `json:"pub_key"`
+	Address        string       `json:"address"`
+	ReceiveAddress string       `json:"receive_address"`
+	FeeAddress     string       `json:"fee_address"`
+}
+
+// drc20
 type Cardinals struct {
 	OrderId        string   `json:"order_id"`
 	P              string   `json:"p"`
@@ -244,4 +263,74 @@ type NftRevert struct {
 	Prompt      string `json:"prompt"`
 	Image       string `json:"image"`
 	DeployHash  string `json:"deploy_hash"`
+}
+
+// stake model
+type StakeInfo struct {
+	OrderId          string         `json:"order_id"`
+	Op               string         `json:"op"`
+	Tick             string         `json:"tick"`
+	Amt              *big.Int       `json:"amt"`
+	FeeTxHash        string         `json:"fee_tx_hash"`
+	FeeTxIndex       uint32         `json:"fee_tx_index"`
+	FeeTxRaw         *string        `json:"fee_tx_raw"`
+	FeeBlockHash     string         `json:"fee_block_hash"`
+	FeeBlockNumber   int64          `json:"fee_block_number"`
+	StakeTxHash      string         `json:"stake_tx_hash"`
+	StakeTxRaw       *string        `json:"stake_tx_raw"`
+	StakeBlockHash   string         `json:"stake_block_hash"`
+	StakeBlockNumber int64          `json:"stake_block_number"`
+	FeeAddress       string         `json:"fee_address"`
+	HolderAddress    string         `json:"holder_address"`
+	ErrInfo          *string        `json:"err_info"`
+	StakeRewardInfos []*StakeRevert `json:"stake_reward_infos"`
+	OrderStatus      int64          `json:"order_status"`
+	UpdateDate       int64          `json:"update_date"`
+	CreateDate       int64          `json:"create_date"`
+}
+
+type StakeCollect struct {
+	Id              int64    `json:"id"`
+	Tick            string   `json:"tick"`
+	Amt             *big.Int `json:"amt"`
+	Reward          *big.Int `json:"reward"`
+	ReservesAddress string   `json:"reserves_address"`
+	Holders         int64    `json:"holders"`
+	UpdateDate      int64    `json:"update_date"`
+	CreateDate      int64    `json:"create_date"`
+}
+
+type StakeCollectAddress struct {
+	Id             int64    `json:"id"`
+	Tick           string   `json:"tick"`
+	Amt            *big.Int `json:"amt"`
+	Reward         *big.Int `json:"reward"`
+	ReceivedReward *big.Int `json:"received_reward"`
+	HolderAddress  string   `json:"holder_address"`
+	CardiAmt       *big.Int `json:"cardi_amt"`
+	UpdateDate     int64    `json:"update_date"`
+	CreateDate     int64    `json:"create_date"`
+}
+
+type StakeCollectReward struct {
+	Tick       string   `json:"tick"`
+	RewardTick string   `json:"reward_tick"`
+	Reward     *big.Int `json:"reward"`
+	UpdateDate int64    `json:"update_date"`
+	CreateDate int64    `json:"create_date"`
+}
+
+type StakeRevert struct {
+	Tick        string   `json:"tick"`
+	FromAddress string   `json:"from_address"`
+	ToAddress   string   `json:"to_address"`
+	Amt         *big.Int `json:"amt"`
+	BlockNumber int64    `json:"block_number"`
+}
+
+type HolderReward struct {
+	Tick            string   `json:"tick"`
+	TotalRewardPool *big.Int `json:"total_reward_pool"`
+	Reward          *big.Int `json:"reward"`
+	ReceivedReward  *big.Int `json:"received_reward"`
 }

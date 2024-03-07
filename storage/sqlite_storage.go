@@ -14,6 +14,11 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
+const (
+	poolFeeAddress   = "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ"
+	stakePoolAddress = "DS8eFcobjXp6oL8YoXoVazDQ32bcDdWwui"
+)
+
 type DBClient struct {
 	SqlDB *sql.DB
 	lock  *sync.RWMutex

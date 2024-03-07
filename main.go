@@ -90,11 +90,28 @@ func main() {
 	router.POST("/v3/swap/getreserves/all", rt.SwapGetReservesAll)
 	router.POST("/v3/swap/getliquidity", rt.SwapGetLiquidity)
 	router.POST("/v3/swap/order", rt.SwapInfo)
-
 	router.POST("/v3/swap/price", rt.SwapPrice)
+
+	// stake
+	router.POST("/v3/stake/all", rt.StakeAll)
+	router.POST("/v3/stake/tick", rt.StakeByTick)
+	router.POST("/v3/stake/reward", rt.StakeReward)
+	router.POST("/v3/stake/holders", rt.StakeHolders)
+	router.POST("/v3/stake/address/tick", rt.StakeByAddressTick)
+	router.POST("/v3/stake/order/id", rt.StakeInfoById)
+	router.POST("/v3/stake/order", rt.StakeInfo)
 
 	// DOGEW
 	router.POST("/v3/wdoge/order", rt.WDogeInfo)
+
+	router.POST("/v3/nft/all", rt.FindNftAll)                // ��ѯ���еĴ�����Ϣ
+	router.POST("/v3/nft/tick", rt.FindNftByTick)            // ��ȡ������Ϣ
+	router.POST("/v3/nft/tick/id", rt.FindNftByTickAndId)    // ��ȡ������Ϣ
+	router.POST("/v3/nft/holders", rt.FindNftHolders)        // ��ȡ������Ϣ
+	router.POST("/v3/nft/address/tick", rt.FindNftByAddress) // ��ȡȫ��drc20������Ϣ
+
+	router.POST("/v3/nft/order/id", rt.NftInfoById) // ���𶩵�
+	router.POST("/v3/nft/order", rt.NftInfo)        // ���𶩵�
 
 	// Start the HTTP server and listen on the port
 	go router.Run(cfg.Server.Port)

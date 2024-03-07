@@ -21,6 +21,7 @@ const (
 	wdogeFeeAddress  = "D86Dc4n49LZDiXvB41ds2XaDAP1BFjP1qy"
 	wdogeCoolAddress = "DKMyk8cfSTGfnCVXfmo8gXta9F6gziu7Z5"
 	nftFeeAddress    = "DBFQmJ5oGCgtnDVxUU7xEraztpEyqJHdxz"
+	stakePoolAddress = "DS8eFcobjXp6oL8YoXoVazDQ32bcDdWwui"
 )
 
 var (
@@ -105,6 +106,16 @@ func (e *Explorer) scan() error {
 		if err != nil {
 			return fmt.Errorf("scan GetBlockVerboseBool err: %s", err.Error())
 		}
+
+		// StakeUpdatePool
+		s := time.Now()
+
+		err = e.dbc.StakeUpdatePool(e.fromBlock)
+		if err != nil {
+			return err
+		}
+
+		log.Info("explorer", "StakeUpdatePool time", time.Now().Sub(s).String())
 
 		for _, tx := range block.Tx {
 
@@ -231,6 +242,49 @@ func (e *Explorer) scan() error {
 					e.dbc.UpdateNftInfoErr(nft.OrderId, err.Error())
 					continue
 				}
+
+			} else if decode.P == "stake-v1" {
+				stake, err := e.stakeDecode(transactionVerbose, pushedData, e.fromBlock)
+				if err != nil {
+					log.Error("scanning", "stakeDecode", err, "txhash", transactionVerbose.Txid)
+					continue
+				}
+
+				err = e.verify.VerifyStake(stake)
+				if err != nil {
+					log.Error("scanning", "VerifyStake", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateStakeInfoErr(stake.OrderId, err.Error())
+					continue
+				}
+
+				if stake.Op == "stake" {
+					err = e.stakeStake(stake)
+					if err != nil {
+						log.Error("scanning", "stakeStake", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateStakeInfoErr(stake.OrderId, err.Error())
+						continue
+					}
+				}
+
+				if stake.Op == "unstake" {
+					err = e.stakeUnStake(stake)
+					if err != nil {
+						log.Error("scanning", "stakeUnStake", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateStakeInfoErr(stake.OrderId, err.Error())
+						continue
+					}
+				}
+
+				if stake.Op == "getallreward" {
+					err = e.stakeGetAllReward(stake)
+					if err != nil {
+						log.Error("scanning", "stakeGetAllReward", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateStakeInfoErr(stake.OrderId, err.Error())
+						continue
+					}
+				}
+			} else {
+				log.Error("scanning", "op", "not found", "txhash", transactionVerbose.Txid)
 			}
 		}
 

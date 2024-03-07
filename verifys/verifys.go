@@ -138,6 +138,10 @@ func (v *Verifys) verifySwapCreate(swap *utils.SwapInfo) error {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
 	}
 
+	if swap.Tick0 == swap.Tick1 {
+		return fmt.Errorf("the token symbol must be different")
+	}
+
 	tick0, tick1, amt0, amt1, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, nil, nil)
 
 	info, err := v.dbc.FindSwapLiquidity(tick0, tick1)
@@ -178,6 +182,9 @@ func (v *Verifys) verifySwapAdd(swap *utils.SwapInfo) error {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
 	}
 
+	if swap.Tick0 == swap.Tick1 {
+		return fmt.Errorf("the token symbol must be different")
+	}
 	info, err := v.dbc.FindSwapLiquidity(tick0, tick1)
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
@@ -254,6 +261,9 @@ func (v *Verifys) verifySwapNow(swap *utils.SwapInfo) error {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
 	}
 
+	if swap.Tick0 == swap.Tick1 {
+		return fmt.Errorf("the token symbol must be different")
+	}
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, swap.Amt0Min, swap.Amt1Min)
 
 	info, err := v.dbc.FindSwapLiquidity(tick0, tick1)
@@ -275,7 +285,7 @@ func (v *Verifys) verifySwapNow(swap *utils.SwapInfo) error {
 	amtout = new(big.Int).Div(amtout, new(big.Int).Add(amtMap[swap.Tick0], amtin))
 
 	if amtout.Cmp(swap.Amt1Min) < 0 {
-		return fmt.Errorf("the amount of tokens exceeds the balance")
+		return fmt.Errorf("the minimum output less than the limit.")
 	}
 
 	sum0, err := v.dbc.FindDrc20AddressInfoByTick(swap.Tick0, swap.HolderAddress)
@@ -305,6 +315,9 @@ func (v *Verifys) verifySwapRemove(swap *utils.SwapInfo) error {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
 	}
 
+	if swap.Tick0 == swap.Tick1 {
+		return fmt.Errorf("the token symbol must be different")
+	}
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, swap.Amt0Min, swap.Amt1Min)
 
 	info, err := v.dbc.FindSwapLiquidity(tick0, tick1)
@@ -440,5 +453,92 @@ func (v *Verifys) verifyNftTransfer(nft *utils.NFTInfo) error {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
 	tx.Commit()
+	return nil
+}
+
+func (v *Verifys) VerifyStake(stake *utils.StakeInfo) error {
+	switch stake.Op {
+	case "stake":
+		return v.verifyStakeStake(stake)
+	case "unstake":
+		return v.verifyStakeUnstake(stake)
+	case "getallreward":
+		return v.verifyStakeGetallreward(stake)
+	default:
+		return fmt.Errorf("do not support the type of tokens")
+	}
+}
+
+func (v *Verifys) verifyStakeStake(si *utils.StakeInfo) error {
+
+	if si.Amt.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	sum0, err := v.dbc.FindDrc20AddressInfoByTick(si.Tick, si.HolderAddress)
+	if err != nil || sum0 == nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if si.Amt.Cmp(sum0) > 0 {
+		return fmt.Errorf("the amount of tokens exceeds the balance")
+	}
+
+	return nil
+}
+
+func (v *Verifys) verifyStakeUnstake(si *utils.StakeInfo) error {
+
+	if si.Amt.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	tx, err := v.dbc.SqlDB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stake, err := v.dbc.FindStakeCollectAddressByTickAndHolder(tx, si.HolderAddress, si.Tick)
+	if err != nil {
+		return fmt.Errorf("FindWDogeInfoByTxHash err: %s", err.Error())
+	}
+
+	if stake == nil {
+		return fmt.Errorf("stake does not exist")
+	}
+
+	if si.Amt.Cmp(stake.Amt) > 0 {
+		return fmt.Errorf("the amount of tokens exceeds the balance")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *Verifys) verifyStakeGetallreward(si *utils.StakeInfo) error {
+
+	tx, err := v.dbc.SqlDB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stake, err := v.dbc.FindStakeCollectAddressByTickAndHolder(tx, si.HolderAddress, si.Tick)
+	if err != nil {
+		return fmt.Errorf("FindWDogeInfoByTxHash err: %s", err.Error())
+	}
+
+	if stake == nil {
+		return fmt.Errorf("stake does not exist")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
