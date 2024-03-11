@@ -60,7 +60,7 @@ func (e *Explorer) Start() {
 		if err != nil {
 			e.fromBlock = 0
 		} else {
-			e.fromBlock = forkBlockHash
+			e.fromBlock = forkBlockHash + 1
 		}
 	}
 

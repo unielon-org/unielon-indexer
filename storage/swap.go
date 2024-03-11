@@ -463,7 +463,7 @@ func (c *DBClient) FindSwapLiquidity(tick0 string, tick1 string) (*utils.SwapLiq
 }
 
 func (c *DBClient) FindSwapLiquidityWeb(tick0 string, tick1 string) (*utils.SwapLiquidity, error) {
-	query := "SELECT tick, tick0, tick1, amt0, amt1, holder_address, liquidity_total, reserves_address from swap_liquidity where tick0 = ? and tick1 = ? and liquidity_total != '0'"
+	query := "SELECT tick, tick0, tick1, amt0, amt1, holder_address, liquidity_total, reserves_address, update_date from swap_liquidity where tick0 = ? and tick1 = ? and liquidity_total != '0'"
 	tick0, tick1, _, _, _, _ = utils.SortTokens(tick0, tick1, nil, nil, nil, nil)
 	rows, err := c.SqlDB.Query(query, tick0, tick1)
 	if err != nil {
@@ -474,7 +474,7 @@ func (c *DBClient) FindSwapLiquidityWeb(tick0 string, tick1 string) (*utils.Swap
 	liquidity := &utils.SwapLiquidity{}
 	if rows.Next() {
 		var amt0, amt1, liquidity_total string
-		err := rows.Scan(&liquidity.Tick, &liquidity.Tick0, &liquidity.Tick1, &amt0, &amt1, &liquidity.HolderAddress, &liquidity_total, &liquidity.ReservesAddress)
+		err := rows.Scan(&liquidity.Tick, &liquidity.Tick0, &liquidity.Tick1, &amt0, &amt1, &liquidity.HolderAddress, &liquidity_total, &liquidity.ReservesAddress, &liquidity.UpdateDate)
 		if err != nil {
 			return nil, err
 		}

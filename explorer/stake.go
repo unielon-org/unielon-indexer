@@ -20,7 +20,7 @@ func (e Explorer) stakeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 
 	stake, err := utils.ConvertStake(param)
 	if err != nil {
-		return nil, fmt.Errorf("ConvertWDoge err: %s", err.Error())
+		return nil, fmt.Errorf("ConvertStake err: %s", err.Error())
 	}
 
 	if len(tx.Vout) < 1 {
@@ -53,7 +53,7 @@ func (e Explorer) stakeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 
 	stake1, err := e.dbc.FindStakeInfoByTxHash(stake.StakeTxHash)
 	if err != nil {
-		return nil, fmt.Errorf("FindWDogeInfoByTxHash err: %s", err.Error())
+		return nil, fmt.Errorf("FindStakeInfoByTxHash err: %s", err.Error())
 	}
 
 	if stake1 != nil {
@@ -64,7 +64,7 @@ func (e Explorer) stakeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 		return stake, nil
 	} else {
 		if err := e.dbc.InstallStakeInfo(stake); err != nil {
-			return nil, fmt.Errorf("InstallWDogeInfo err: %s", err.Error())
+			return nil, fmt.Errorf("InstallStakeInfo err: %s", err.Error())
 		}
 	}
 

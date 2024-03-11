@@ -19,8 +19,8 @@ func (c *DBClient) InstallStakeAddressInfo(info *utils.AddressInfo) error {
 }
 
 func (c *DBClient) InstallStakeInfo(stake *utils.StakeInfo) error {
-	query := "INSERT INTO stake_info (order_id, op, tick, amt, fee_address, holder_address, stake_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?)"
-	_, err := c.SqlDB.Exec(query, stake.OrderId, stake.Op, stake.Tick, stake.Amt.String(), stake.FeeAddress, stake.HolderAddress, stake.StakeTxHash)
+	query := "INSERT INTO stake_info (order_id, op, tick, amt, fee_address, fee_tx_hash, holder_address, stake_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err := c.SqlDB.Exec(query, stake.OrderId, stake.Op, stake.Tick, stake.Amt.String(), stake.FeeAddress, stake.FeeTxHash, stake.HolderAddress, stake.StakeTxHash)
 	return err
 }
 
@@ -179,7 +179,7 @@ func (c *DBClient) FindStakeAddressInfo(orderId string) (*utils.AddressInfo, err
 }
 
 func (c *DBClient) FindStakeInfoByTxHash(txHash string) (*utils.StakeInfo, error) {
-	query := "SELECT order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, stake_tx_hash, stake_tx_raw, stake_block_hash, stake_block_number, fee_address, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_info where stake_tx_hash = ?"
+	query := "SELECT order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, stake_tx_hash, stake_tx_raw, stake_block_hash, stake_block_number, fee_address, holder_address, update_date, create_date FROM stake_info where stake_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, txHash)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (c *DBClient) FindStakeInfoByTxHash(txHash string) (*utils.StakeInfo, error
 }
 
 func (c *DBClient) FindStakeInfo(orderId, op, tick, holder_address string, limit, offset int64) ([]*utils.StakeInfo, int64, error) {
-	query := "SELECT order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, stake_tx_hash, stake_block_hash, stake_block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM stake_info  "
+	query := "SELECT order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, stake_tx_hash, stake_block_hash, stake_block_number, fee_address, holder_address, order_status,  update_date, create_date  FROM stake_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -278,7 +278,7 @@ func (c *DBClient) FindStakeInfo(orderId, op, tick, holder_address string, limit
 }
 
 func (c *DBClient) FindStakeInfoByFee(feeAddress string) (*utils.StakeInfo, error) {
-	query := "SELECT order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, stake_tx_hash, stake_block_hash, stake_block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM stake_info  where fee_address = ? and fee_tx_hash = ''"
+	query := "SELECT order_id, op, tick, amt, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, stake_tx_hash, stake_block_hash, stake_block_number, fee_address, holder_address, order_status, update_date, create_date  FROM stake_info  where fee_address = ? and fee_tx_hash = ''"
 	rows, err := c.SqlDB.Query(query, feeAddress)
 	if err != nil {
 		return nil, err
@@ -397,7 +397,7 @@ func (c *DBClient) FindStakeCollect() ([]*utils.StakeCollect, error) {
 }
 
 func (c *DBClient) FindStakeByAddressTick(holder_address, tick string, limit, offset int64) ([]*utils.StakeCollectAddress, int64, error) {
-	query := " SELECT tick, amt, reward, received_reward, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_collect_address "
+	query := " SELECT tick, amt, reward, received_reward, holder_address, update_date, create_date FROM stake_collect_address "
 
 	where := "where"
 	whereAges := []any{}
@@ -465,11 +465,11 @@ func (c *DBClient) FindStakeCollectAddressAll() ([]*utils.StakeCollectAddress, e
 				   sca.reward,
 				   sca.received_reward,
 				   sca.holder_address,
-				   COALESCE(d20ai.amt_sum, 0) AS amt_sum, -- 将NULL转换为0
-				   UNIX_TIMESTAMP(sca.update_date),
-				   UNIX_TIMESTAMP(sca.create_date)
+				   COALESCE(d20ai.amt_sum, 0) AS amt_sum, 
+				   sca.update_date,
+				   sca.create_date
 			FROM stake_collect_address sca
-			LEFT JOIN unielon_test.drc20_address_info d20ai
+			LEFT JOIN drc20_address_info d20ai
 			ON sca.holder_address = d20ai.receive_address AND d20ai.tick = 'CARDI';
 			`
 
@@ -501,7 +501,7 @@ func (c *DBClient) FindStakeCollectAddressAll() ([]*utils.StakeCollectAddress, e
 }
 
 func (c *DBClient) FindStakeCollectAddressByTickAndHolder(tx *sql.Tx, holder_address, tick string) (*utils.StakeCollectAddress, error) {
-	query := " SELECT tick, amt, reward, received_reward, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_collect_address WHERE holder_address = ? and tick = ?"
+	query := " SELECT tick, amt, reward, received_reward, holder_address, update_date, create_date FROM stake_collect_address WHERE holder_address = ? and tick = ?"
 
 	rows, err := tx.Query(query, holder_address, tick)
 	if err != nil {
@@ -528,7 +528,7 @@ func (c *DBClient) FindStakeCollectAddressByTickAndHolder(tx *sql.Tx, holder_add
 }
 
 func (c *DBClient) FindStakeCollectAddressByTick(holder_address, tick string) (*utils.StakeCollectAddress, error) {
-	query := " SELECT tick, amt, reward, received_reward, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_collect_address WHERE holder_address = ? and tick = ?"
+	query := " SELECT tick, amt, reward, received_reward, holder_address, update_date, create_date FROM stake_collect_address WHERE holder_address = ? and tick = ?"
 
 	rows, err := c.SqlDB.Query(query, holder_address, tick)
 	if err != nil {

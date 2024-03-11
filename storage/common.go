@@ -472,9 +472,9 @@ func (c *DBClient) StakeGetReward(holderAddress, tick string) ([]*utils.HolderRe
 			continue
 		}
 
-		// ����unix�ı�����������Ĵ���Ӧ�õõ�������
+		//
 		amt := big.NewInt(0).Div(big.NewInt(0).Mul(ar.Amt, reward), unixPool)
-		// ���� �Ѿ���ȡ�ĺ�ȫ����
+		//
 		receivedAmt := big.NewInt(0).Div(big.NewInt(0).Mul(ar.Amt, stakeAddressCollect.ReceivedReward), unixPool)
 		TotalAmt := big.NewInt(0).Div(big.NewInt(0).Mul(ar.Amt, stakeAddressCollect.Reward), unixPool)
 		TotalAmt = big.NewInt(0).Add(TotalAmt, amt)
@@ -504,7 +504,7 @@ func (c *DBClient) StakeGetRewardRouter(holderAddress, tick string) ([]*utils.Ho
 		return nil, err
 	}
 
-	// ��ȡ���˵���Ѻ��Ϣ
+	//
 	stakeAddressCollect, err := c.FindStakeCollectAddressByTick(holderAddress, tick)
 	if err != nil {
 		return nil, err
@@ -517,7 +517,7 @@ func (c *DBClient) StakeGetRewardRouter(holderAddress, tick string) ([]*utils.Ho
 	rewards := make([]*utils.HolderReward, 0)
 	reward := big.NewInt(0).Sub(stakeAddressCollect.Reward, stakeAddressCollect.ReceivedReward)
 
-	// �����wdoge
+	// wdoge
 	if tick == "UNIX-SWAP-WDOGE(WRAPPED-DOGE)" {
 		rewards = append(rewards, &utils.HolderReward{
 			Tick:   "WDOGE(WRAPPED-DOGE)",
@@ -589,9 +589,12 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 	}
 
 	for _, stakeAddressCollect := range stakeAddressCollects {
-
 		amt0 := big.NewInt(0)
-		if stakeAddressCollect.CardiAmt.Cmp(big.NewInt(1000000000000)) >= 0 {
+		if stakeAddressCollect.CardiAmt.Cmp(big.NewInt(10000000000000)) >= 0 {
+			amt0 = big.NewInt(0).Div(big.NewInt(0).Mul(stakeAddressCollect.Amt, big.NewInt(50)), big.NewInt(100))
+		} else if stakeAddressCollect.CardiAmt.Cmp(big.NewInt(5000000000000)) >= 0 {
+			amt0 = big.NewInt(0).Div(big.NewInt(0).Mul(stakeAddressCollect.Amt, big.NewInt(35)), big.NewInt(100))
+		} else if stakeAddressCollect.CardiAmt.Cmp(big.NewInt(1000000000000)) >= 0 {
 			amt0 = big.NewInt(0).Div(big.NewInt(0).Mul(stakeAddressCollect.Amt, big.NewInt(25)), big.NewInt(100))
 		} else if stakeAddressCollect.CardiAmt.Cmp(big.NewInt(500000000000)) >= 0 {
 			amt0 = big.NewInt(0).Div(big.NewInt(0).Mul(stakeAddressCollect.Amt, big.NewInt(15)), big.NewInt(100))

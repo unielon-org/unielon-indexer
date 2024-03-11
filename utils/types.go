@@ -171,6 +171,7 @@ type SwapLiquidity struct {
 	LiquidityTotal  *big.Int `json:"liquidity_total"`
 	ReservesAddress string   `json:"reserves_address"`
 	HolderAddress   string   `json:"holder_address"`
+	UpdateDate      string   `json:"update_date"`
 }
 
 // WDOGE
@@ -285,8 +286,8 @@ type StakeInfo struct {
 	ErrInfo          *string        `json:"err_info"`
 	StakeRewardInfos []*StakeRevert `json:"stake_reward_infos"`
 	OrderStatus      int64          `json:"order_status"`
-	UpdateDate       int64          `json:"update_date"`
-	CreateDate       int64          `json:"create_date"`
+	UpdateDate       string         `json:"update_date"`
+	CreateDate       string         `json:"create_date"`
 }
 
 type StakeCollect struct {
@@ -296,8 +297,8 @@ type StakeCollect struct {
 	Reward          *big.Int `json:"reward"`
 	ReservesAddress string   `json:"reserves_address"`
 	Holders         int64    `json:"holders"`
-	UpdateDate      int64    `json:"update_date"`
-	CreateDate      int64    `json:"create_date"`
+	UpdateDate      string   `json:"update_date"`
+	CreateDate      string   `json:"create_date"`
 }
 
 type StakeCollectAddress struct {
@@ -308,16 +309,16 @@ type StakeCollectAddress struct {
 	ReceivedReward *big.Int `json:"received_reward"`
 	HolderAddress  string   `json:"holder_address"`
 	CardiAmt       *big.Int `json:"cardi_amt"`
-	UpdateDate     int64    `json:"update_date"`
-	CreateDate     int64    `json:"create_date"`
+	UpdateDate     string   `json:"update_date"`
+	CreateDate     string   `json:"create_date"`
 }
 
 type StakeCollectReward struct {
 	Tick       string   `json:"tick"`
 	RewardTick string   `json:"reward_tick"`
 	Reward     *big.Int `json:"reward"`
-	UpdateDate int64    `json:"update_date"`
-	CreateDate int64    `json:"create_date"`
+	UpdateDate string   `json:"update_date"`
+	CreateDate string   `json:"create_date"`
 }
 
 type StakeRevert struct {

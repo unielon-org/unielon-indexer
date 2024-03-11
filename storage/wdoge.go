@@ -7,8 +7,8 @@ import (
 )
 
 func (c *DBClient) InstallWDogeInfo(wdoge *utils.WDogeInfo) error {
-	query := "INSERT INTO wdoge_info (order_id, op, tick, amt, fee_address, holder_address, wdoge_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?)"
-	_, err := c.SqlDB.Exec(query, wdoge.OrderId, wdoge.Op, wdoge.Tick, wdoge.Amt.String(), wdoge.FeeAddress, wdoge.HolderAddress, wdoge.WDogeTxHash)
+	query := "INSERT INTO wdoge_info (order_id, op, tick, amt, fee_address, fee_tx_hash, holder_address, wdoge_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err := c.SqlDB.Exec(query, wdoge.OrderId, wdoge.Op, wdoge.Tick, wdoge.Amt.String(), wdoge.FeeAddress, wdoge.FeeTxHash, wdoge.HolderAddress, wdoge.WDogeTxHash)
 	if err != nil {
 		fmt.Println(err)
 		return err
