@@ -168,6 +168,7 @@ type SwapLiquidity struct {
 	Amt0            *big.Int `json:"amt0"`
 	Amt1            *big.Int `json:"amt1"`
 	Path            string   `json:"path"`
+	Liquidity       *big.Int `json:"liquidity"`
 	LiquidityTotal  *big.Int `json:"liquidity_total"`
 	ReservesAddress string   `json:"reserves_address"`
 	HolderAddress   string   `json:"holder_address"`

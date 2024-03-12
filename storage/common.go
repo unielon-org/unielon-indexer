@@ -625,6 +625,7 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 		}
 
 		rewardSum[stakeAddressCollect.Tick] = big.NewInt(0).Add(rewardSum[stakeAddressCollect.Tick], rewardAddress)
+		reward := rewardAddress
 		rewardAddress = big.NewInt(0).Add(rewardAddress, stakeAddressCollect.Reward)
 
 		update := "UPDATE stake_collect_address SET reward = ? WHERE tick = ? AND holder_address = ?"
@@ -634,7 +635,7 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 			return err
 		}
 
-		err := c.InstallRewardStakeRevert(tx, stakeAddressCollect.Tick, "", stakeAddressCollect.HolderAddress, rewardAddress, height)
+		err := c.InstallRewardStakeRevert(tx, stakeAddressCollect.Tick, "", stakeAddressCollect.HolderAddress, reward, height)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -652,7 +653,7 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 			return err
 		}
 
-		err := c.InstallRewardStakeRevert(tx, stakeCollect.Tick, "", "collect", reward, height)
+		err := c.InstallRewardStakeRevert(tx, stakeCollect.Tick, "", "collect", rewardSum[stakeCollect.Tick], height)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -693,7 +694,7 @@ func (c *DBClient) StakeUpdatePoolFork(tx *sql.Tx, tick, from, to string, amt *b
 			return err
 		}
 
-		reward := big.NewInt(0).Add(stakeAddressCollect.ReceivedReward, amt)
+		reward := big.NewInt(0).Sub(stakeAddressCollect.ReceivedReward, amt)
 		update := "UPDATE stake_collect_address SET received_reward = ? WHERE tick = ? AND holder_address = ?"
 		_, err = tx.Exec(update, reward.String(), tick, from)
 		if err != nil {

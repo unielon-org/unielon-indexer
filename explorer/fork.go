@@ -145,6 +145,58 @@ func (e *Explorer) fork(height int64) error {
 		return err
 	}
 
+	stakeReverts, err := e.dbc.FindStakeRevertByNumber(height)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
+	}
+
+	for _, revert := range stakeReverts {
+		if revert.FromAddress == "" {
+			err = e.dbc.StakeUnStake(tx, revert.Tick, revert.ToAddress, revert.Amt, true, height)
+			tx.Rollback()
+			return fmt.Errorf("swapFork Burn error: %v", err)
+		}
+
+		if revert.ToAddress == "" {
+			err = e.dbc.StakeStake(tx, revert.Tick, revert.FromAddress, revert.Amt, true, height)
+			tx.Rollback()
+			return fmt.Errorf("swapFork Mint error: %v", err)
+		}
+	}
+
+	err = e.dbc.DelStakeRevert(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	stakeRewardReverts, err := e.dbc.FindRewardStakeRevertByNumber(height)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
+	}
+
+	for _, revert := range stakeRewardReverts {
+		err := e.dbc.StakeUpdatePoolFork(tx, revert.Tick, revert.FromAddress, revert.ToAddress, revert.Amt, height)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = e.dbc.DelStakeRewardRevert(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = e.dbc.DelStakeRewardInfo(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return err

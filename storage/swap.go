@@ -526,7 +526,8 @@ func (c *DBClient) FindSwapLiquidityByHolder(holder_address string, tick0, tick1
 		liquidity.Amt1 = new(big.Int).Div(new(big.Int).Mul(swapLiquidity.Amt1, amt_sum_big), swapLiquidity.LiquidityTotal)
 		liquidity.Tick0 = tick0
 		liquidity.Tick1 = tick1
-		liquidity.LiquidityTotal = amt_sum_big
+		liquidity.Liquidity = amt_sum_big
+		liquidity.LiquidityTotal = swapLiquidity.LiquidityTotal
 		liquidity.UpdateDate = swapLiquidity.UpdateDate
 		liquiditys = append(liquiditys, liquidity)
 	}
