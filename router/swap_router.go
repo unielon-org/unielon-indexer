@@ -113,7 +113,8 @@ func (r *Router) SwapGetLiquidity(c *gin.Context) {
 		data["tick1"] = v.Tick1
 		data["reserve0"] = v.Amt0.String()
 		data["reserve1"] = v.Amt1.String()
-		data["liquidity"] = v.LiquidityTotal.String()
+		data["liquidity"] = v.Liquidity.String()
+		data["liquidity_total"] = v.LiquidityTotal.String()
 		data["update_date"] = v.UpdateDate
 		datas = append(datas, data)
 	}
