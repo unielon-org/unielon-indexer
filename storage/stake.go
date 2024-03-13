@@ -79,7 +79,7 @@ func (c *DBClient) UpdateStakeInfoFork(tx *sql.Tx, height int64) error {
 }
 
 func (c *DBClient) DelStakeRevert(tx *sql.Tx, height int64) error {
-	query := "delete from state_revert where block_number > ?"
+	query := "delete from stake_revert where block_number > ?"
 	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (c *DBClient) DelStakeRevert(tx *sql.Tx, height int64) error {
 }
 
 func (c *DBClient) DelStakeRewardRevert(tx *sql.Tx, height int64) error {
-	query := "delete from state_reward_revert where block_number > ?"
+	query := "delete from stake_reward_revert where block_number > ?"
 	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
