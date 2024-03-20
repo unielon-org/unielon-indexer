@@ -91,14 +91,18 @@ func (e *Explorer) fork(height int64) error {
 	for _, revert := range swapReverts {
 		if revert.FromAddress == "" {
 			err = e.dbc.Burn(tx, revert.Tick, revert.ToAddress, revert.Amt, true, height)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Burn error: %v", err)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("swapFork Burn error: %v", err)
+			}
 		}
 
 		if revert.ToAddress == "" {
 			err = e.dbc.Mint(tx, revert.Tick, revert.FromAddress, revert.Amt, true, height)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Mint error: %v", err)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("swapFork Mint error: %v", err)
+			}
 		}
 
 		err = e.dbc.Transfer(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.Amt, true, height)
@@ -122,14 +126,18 @@ func (e *Explorer) fork(height int64) error {
 	for _, revert := range nftReverts {
 		if revert.FromAddress == "" {
 			err = e.dbc.BurnNft(tx, revert.Tick, revert.ToAddress, revert.TickId)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Burn error: %v", err)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("swapFork Burn error: %v", err)
+			}
 		}
 
 		if revert.ToAddress == "" {
 			err = e.dbc.MintNft(tx, revert.Tick, revert.FromAddress, revert.TickId, revert.Prompt, revert.Image, revert.DeployHash, true, height)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Mint error: %v", err)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("swapFork Mint error: %v", err)
+			}
 		}
 
 		err = e.dbc.TransferNft(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.TickId, true, height)
@@ -154,14 +162,18 @@ func (e *Explorer) fork(height int64) error {
 	for _, revert := range stakeReverts {
 		if revert.FromAddress == "" {
 			err = e.dbc.StakeUnStake(tx, revert.Tick, revert.ToAddress, revert.Amt, true, height)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Burn error: %v", err)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("swapFork Burn error: %v", err)
+			}
 		}
 
 		if revert.ToAddress == "" {
 			err = e.dbc.StakeStake(tx, revert.Tick, revert.FromAddress, revert.Amt, true, height)
-			tx.Rollback()
-			return fmt.Errorf("swapFork Mint error: %v", err)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("swapFork Mint error: %v", err)
+			}
 		}
 	}
 
