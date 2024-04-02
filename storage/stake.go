@@ -87,8 +87,26 @@ func (c *DBClient) DelStakeRevert(tx *sql.Tx, height int64) error {
 	return nil
 }
 
+func (c *DBClient) DelStakeRevert2(tx *sql.Tx, height int64) error {
+	query := "delete from stake_revert where block_number < ?"
+	_, err := tx.Exec(query, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *DBClient) DelStakeRewardRevert(tx *sql.Tx, height int64) error {
 	query := "delete from stake_reward_revert where block_number > ?"
+	_, err := tx.Exec(query, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) DelStakeRewardRevert2(tx *sql.Tx, height int64) error {
+	query := "delete from stake_reward_revert where block_number < ?"
 	_, err := tx.Exec(query, height)
 	if err != nil {
 		return err
