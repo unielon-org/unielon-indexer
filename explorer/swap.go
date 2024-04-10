@@ -85,6 +85,11 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 		return fmt.Errorf("swapCreate FindSwapLiquidity error: %v", err)
 	}
 
+	tx, err := e.dbc.SqlDB.Begin()
+	if err != nil {
+		return err
+	}
+
 	if info == nil {
 		reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(swap.Tick0+swap.Tick1), &chaincfg.MainNetParams)
 		swap.Tick = swap.Tick0 + "-SWAP-" + swap.Tick1
@@ -98,10 +103,16 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 		swap.Amt0Out = swap.Amt0
 		swap.Amt1Out = swap.Amt1
 
-		err = e.dbc.SwapCreate(swap, reservesAddress.String(), liquidityBase)
-
+		err = e.dbc.SwapCreate(tx, swap, reservesAddress.String(), liquidityBase)
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("swapCreate SwapCreate error: %v", err)
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			tx.Rollback()
+			return err
 		}
 
 	} else if info.LiquidityTotal.Cmp(big.NewInt(0)) == 0 {

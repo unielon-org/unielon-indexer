@@ -157,6 +157,63 @@ func ConvertStake(params *StakeParams) (*StakeInfo, error) {
 	return stake, nil
 }
 
+func ConvertExChange(params *ExchangeParams) (*ExchangeInfo, error) {
+	ex := &ExchangeInfo{
+		Op:            params.Op,
+		ExId:          params.ExId,
+		Tick0:         strings.ToUpper(params.Tick0),
+		Tick1:         strings.ToUpper(params.Tick1),
+		HolderAddress: params.HolderAddress,
+	}
+
+	var err error
+	ex.Amt0, err = ConvetStr(params.Amt0)
+	if err != nil {
+		return nil, err
+	}
+
+	ex.Amt1, err = ConvetStr(params.Amt1)
+	if err != nil {
+		return nil, err
+	}
+
+	return ex, nil
+
+}
+
+func ConvertBox(params *BoxParams) (*BoxInfo, error) {
+	ex := &BoxInfo{
+		Op:            params.Op,
+		Tick0:         strings.ToUpper(params.Tick0),
+		Tick1:         strings.ToUpper(params.Tick1),
+		LiqBlock:      params.LiqBlock,
+		HolderAddress: params.HolderAddress,
+	}
+
+	var err error
+	ex.Amt0, err = ConvetStr(params.Amt0)
+	if err != nil {
+		return nil, err
+	}
+
+	ex.LiqAmt, err = ConvetStr(params.Liqamt)
+	if err != nil {
+		return nil, err
+	}
+
+	ex.Max, err = ConvetStr(params.Max)
+	if err != nil {
+		return nil, err
+	}
+
+	ex.Amt1, err = ConvetStr(params.Amt1)
+	if err != nil {
+		return nil, err
+	}
+	return ex, nil
+
+}
+
 func ConvetStr(number string) (*big.Int, error) {
 	if number != "" {
 		max_big, is_ok := new(big.Int).SetString(number, 10)

@@ -107,15 +107,10 @@ func (e *Explorer) scan() error {
 			return fmt.Errorf("scan GetBlockVerboseBool err: %s", err.Error())
 		}
 
-		// StakeUpdatePool
-		s := time.Now()
-
-		err = e.dbc.StakeUpdatePool(e.fromBlock)
+		err = e.dbc.ScheduledTasks(e.fromBlock)
 		if err != nil {
 			return err
 		}
-
-		log.Info("explorer", "StakeUpdatePool time", time.Now().Sub(s).String())
 
 		// del
 		dbtx, err := e.dbc.SqlDB.Begin()
@@ -294,6 +289,78 @@ func (e *Explorer) scan() error {
 					if err != nil {
 						log.Error("scanning", "stakeGetAllReward", err, "txhash", transactionVerbose.Txid)
 						e.dbc.UpdateStakeInfoErr(stake.OrderId, err.Error())
+						continue
+					}
+				}
+			} else if decode.P == "order-v1" {
+
+				ex, err := e.exchangeDecode(transactionVerbose, pushedData, e.fromBlock)
+				if err != nil {
+					log.Error("scanning", "exchangeDecode", err, "txhash", transactionVerbose.Txid)
+					continue
+				}
+
+				err = e.verify.VerifyExchange(ex)
+				if err != nil {
+					log.Error("scanning", "VerifyExchange", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateExchangeInfoErr(ex.OrderId, err.Error())
+					continue
+				}
+
+				if ex.Op == "create" {
+					err = e.exchangeCreate(ex)
+					if err != nil {
+						log.Error("scanning", "exchangeCreate", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateExchangeInfoErr(ex.OrderId, err.Error())
+						continue
+					}
+				}
+
+				if ex.Op == "trade" {
+					err = e.exchangeTrade(ex)
+					if err != nil {
+						log.Error("scanning", "exchangeTrade", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateExchangeInfoErr(ex.OrderId, err.Error())
+						continue
+					}
+				}
+
+				if ex.Op == "cancel" {
+					err = e.exchangeCancel(ex)
+					if err != nil {
+						log.Error("scanning", "exchangeCancel", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateExchangeInfoErr(ex.OrderId, err.Error())
+						continue
+					}
+				}
+			} else if decode.P == "box-v1" {
+				ex, err := e.boxDecode(transactionVerbose, pushedData, e.fromBlock)
+				if err != nil {
+					log.Error("scanning", "exchangeDecode", err, "txhash", transactionVerbose.Txid)
+					continue
+				}
+
+				err = e.verify.VerifyBox(ex)
+				if err != nil {
+					log.Error("scanning", "VerifyExchange", err, "txhash", transactionVerbose.Txid)
+					e.dbc.UpdateBoxInfoErr(ex.OrderId, err.Error())
+					continue
+				}
+
+				if ex.Op == "deploy" {
+					err = e.boxDeploy(ex)
+					if err != nil {
+						log.Error("scanning", "exchangeCreate", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateBoxInfoErr(ex.OrderId, err.Error())
+						continue
+					}
+				}
+
+				if ex.Op == "mint" {
+					err = e.boxMint(ex)
+					if err != nil {
+						log.Error("scanning", "exchangeTrade", err, "txhash", transactionVerbose.Txid)
+						e.dbc.UpdateBoxInfoErr(ex.OrderId, err.Error())
 						continue
 					}
 				}

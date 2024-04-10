@@ -28,6 +28,15 @@ func (c *DBClient) InstallDrc20(tx *sql.Tx, max, lim *big.Int, tick, receive_add
 	return nil
 }
 
+func (c *DBClient) DeleteDrc20(tx *sql.Tx, tick string) error {
+	query := "DELETE FROM drc20_info where tick = ?"
+	_, err := tx.Exec(query, tick)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *DBClient) UpdateCardinalsBlockNumber(tx *sql.Tx, card *utils.Cardinals) error {
 	query := "UPDATE cardinals_info SET block_number = ?, block_hash = ?, order_status = 0 where order_id = ?"
 	_, err := tx.Exec(query, card.BlockNumber, card.BlockHash, card.OrderId)

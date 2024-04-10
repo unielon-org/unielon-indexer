@@ -6,7 +6,38 @@ import (
 	"github.com/dogecoinw/go-dogecoin/log"
 	"github.com/unielon-org/unielon-indexer/utils"
 	"math/big"
+	"time"
 )
+
+func (c *DBClient) ScheduledTasks(height int64) error {
+	s := time.Now()
+
+	tx, err := c.SqlDB.Begin()
+	if err != nil {
+		return err
+	}
+
+	err = c.StakeUpdatePoolScheduled(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = c.BoxDeployScheduled(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	log.Info("explorer", "StakeUpdatePool time", time.Now().Sub(s).String())
+	return nil
+}
 
 func (c *DBClient) Transfer(tx *sql.Tx, tick, from, to string, amt *big.Int, fork bool, height int64) error {
 	c.lock.Lock()
@@ -559,7 +590,7 @@ func (c *DBClient) StakeGetRewardRouter(holderAddress, tick string) ([]*utils.Ho
 	return rewards, nil
 }
 
-func (c *DBClient) StakeUpdatePool(height int64) error {
+func (c *DBClient) StakeUpdatePoolScheduled(tx *sql.Tx, height int64) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -611,11 +642,6 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 	rewardSum["WDOGE(WRAPPED-DOGE)"] = big.NewInt(0)
 	rewardSum["UNIX-SWAP-WDOGE(WRAPPED-DOGE)"] = big.NewInt(0)
 
-	tx, err := c.SqlDB.Begin()
-	if err != nil {
-		return err
-	}
-
 	for i, stakeAddressCollect := range stakeAddressCollects {
 		rewardAddress := big.NewInt(0)
 		if i == len(stakeAddressCollects)-1 {
@@ -631,13 +657,11 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 		update := "UPDATE stake_collect_address SET reward = ? WHERE tick = ? AND holder_address = ?"
 		_, err = tx.Exec(update, rewardAddress.String(), stakeAddressCollect.Tick, stakeAddressCollect.HolderAddress)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
 		err := c.InstallRewardStakeRevert(tx, stakeAddressCollect.Tick, "", stakeAddressCollect.HolderAddress, reward, height)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 	}
@@ -649,23 +673,14 @@ func (c *DBClient) StakeUpdatePool(height int64) error {
 		update := "UPDATE stake_collect SET reward = ?, last_block = ? WHERE tick = ?"
 		_, err = tx.Exec(update, reward.String(), height, stakeCollect.Tick)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
 		err := c.InstallRewardStakeRevert(tx, stakeCollect.Tick, "", "collect", rewardSum[stakeCollect.Tick], height)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
 	return nil
 }
 
@@ -713,6 +728,30 @@ func (c *DBClient) StakeUpdatePoolFork(tx *sql.Tx, tick, from, to string, amt *b
 	_, err = tx.Exec(update, reward.String(), tick, to)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *DBClient) BoxDeployScheduled(tx *sql.Tx, height int64) error {
+
+	bcs, err := c.FindBoxCollectByHeight(height)
+	if err != nil {
+		return err
+	}
+
+	for _, bc := range bcs {
+		if bc.LiqAmtFinish.Cmp(big.NewInt(0)) == 1 {
+			err = c.BoxFinish(tx, bc, height)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = c.BoxRefund(tx, bc, height)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

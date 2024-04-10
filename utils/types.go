@@ -99,6 +99,28 @@ type StakeParams struct {
 	HolderAddress string `json:"holder_address"`
 }
 
+type ExchangeParams struct {
+	Op            string `json:"op"`
+	ExId          string `json:"exid"`
+	Tick0         string `json:"tick0"`
+	Tick1         string `json:"tick1"`
+	Amt0          string `json:"amt0"`
+	Amt1          string `json:"amt1"`
+	HolderAddress string `json:"holder_address"`
+}
+
+type BoxParams struct {
+	Op            string `json:"op"`
+	Tick0         string `json:"tick0"`
+	Tick1         string `json:"tick1"`
+	Max           string `json:"max"`
+	Amt0          string `json:"amt0"`
+	Liqamt        string `json:"liqamt"`
+	LiqBlock      int64  `json:"liqblock"`
+	Amt1          string `json:"amt1"`
+	HolderAddress string `json:"holder_address"`
+}
+
 // model
 type AddressInfo struct {
 	OrderId        string       `json:"order_id"`
@@ -132,6 +154,69 @@ type Cardinals struct {
 	OrderStatus    int64    `json:"order_status"`
 	ErrInfo        string   `json:"err_info"`
 	CreateDate     string   `json:"create_date"`
+}
+
+type Drc20Info struct {
+	Tick         string   `json:"tick"`
+	MintAmt      *big.Int `json:"mint_amt"`
+	MaxAmt       *big.Int `json:"max_amt"`
+	Dec          uint8    `json:"dec"`
+	Lim          *big.Int `json:"lim"`
+	Holders      uint64   `json:"holders"`
+	Transactions uint64   `json:"transactions"`
+	DeployTime   int64    `json:"deploy_time"`
+	LastMintTime *int64   `json:"last_mint_time"`
+	DeployBy     string   `json:"deploy_by"`
+	Inscription  string   `json:"inscription"`
+	Logo         *string  `json:"logo"`
+	Introduction *string  `json:"introduction"`
+	WhitePaper   *string  `json:"white_paper"`
+	Official     *string  `json:"official"`
+	Telegram     *string  `json:"telegram"`
+	Discorad     *string  `json:"discorad"`
+	Twitter      *string  `json:"twitter"`
+	Facebook     *string  `json:"facebook"`
+	Github       *string  `json:"github"`
+	IsCheck      uint64   `json:"is_check"`
+}
+
+// exchange
+type ExchangeInfo struct {
+	OrderId             string   `json:"order_id"`
+	Op                  string   `json:"op"`
+	ExId                string   `json:"exid"`
+	Tick0               string   `json:"tick0"`
+	Tick1               string   `json:"tick1"`
+	Amt0                *big.Int `json:"amt0"`
+	Amt1                *big.Int `json:"amt1"`
+	FeeTxHash           string   `json:"fee_tx_hash"`
+	FeeTxIndex          uint32   `json:"fee_tx_index"`
+	FeeBlockNumber      int64    `json:"fee_block_number"`
+	FeeBlockHash        string   `json:"fee_block_hash"`
+	ExchangeTxHash      string   `json:"exchange_tx_hash"`
+	ExchangeTxRaw       string   `json:"exchange_tx_raw"`
+	ExchangeBlockNumber int64    `json:"exchange_block_number"`
+	ExchangeBlockHash   string   `json:"exchange_block_hash"`
+	HolderAddress       string   `json:"holder_address"`
+	FeeAddress          string   `json:"fee_address"`
+	OrderStatus         int64    `json:"order_status"`
+	CreateDate          int64    `json:"create_date"`
+	UpdateDate          int64    `json:"update_date"`
+}
+
+type ExchangeCollect struct {
+	Id              int64    `json:"id"`
+	ExId            string   `json:"exid"`
+	Tick0           string   `json:"tick0"`
+	Tick1           string   `json:"tick1"`
+	Amt0            *big.Int `json:"amt0"`
+	Amt1            *big.Int `json:"amt1"`
+	Amt0Finish      *big.Int `json:"amt0_finish"`
+	Amt1Finish      *big.Int `json:"amt1_finish"`
+	HolderAddress   string   `json:"holder_address"`
+	ReservesAddress string   `json:"reserves_address"`
+	CreateDate      int64    `json:"create_date"`
+	UpdateDate      int64    `json:"update_date"`
 }
 
 // SWAP
@@ -173,6 +258,26 @@ type SwapLiquidity struct {
 	ReservesAddress string   `json:"reserves_address"`
 	HolderAddress   string   `json:"holder_address"`
 	UpdateDate      string   `json:"update_date"`
+}
+
+type SwapLiquidityLP struct {
+	Tick          string   `json:"tick"`
+	Liquidity     *big.Int `json:"liquidity"`
+	HolderAddress string   `json:"holder_address"`
+}
+
+type SwapRevert struct {
+	Tick        string   `json:"tick"`
+	FromAddress string   `json:"from_address"`
+	ToAddress   string   `json:"to_address"`
+	Amt         *big.Int `json:"amt"`
+	BlockNumber int64    `json:"block_number"`
+}
+
+type SwapInfoVolume struct {
+	Tick0  string  `json:"tick0"`
+	Tick1  string  `json:"tick1"`
+	Volume float64 `json:"volume"`
 }
 
 // WDOGE
@@ -265,6 +370,99 @@ type NftRevert struct {
 	Prompt      string `json:"prompt"`
 	Image       string `json:"image"`
 	DeployHash  string `json:"deploy_hash"`
+}
+
+// box
+type BoxInfo struct {
+	OrderId        string   `json:"order_id"`
+	Op             string   `json:"op"`
+	Tick0          string   `json:"tick0"`
+	Tick1          string   `json:"tick1"`
+	Max            *big.Int `json:"max"`
+	Amt0           *big.Int `json:"amt0"`
+	LiqAmt         *big.Int `json:"liqamt"`
+	LiqBlock       int64    `json:"liqblock"`
+	Amt1           *big.Int `json:"amt1"`
+	FeeTxHash      string   `json:"fee_tx_hash"`
+	FeeTxIndex     uint32   `json:"fee_tx_index"`
+	FeeBlockNumber int64    `json:"fee_block_number"`
+	FeeBlockHash   string   `json:"fee_block_hash"`
+	BoxTxHash      string   `json:"box_tx_hash"`
+	BoxTxRaw       string   `json:"box_tx_raw"`
+	BoxBlockNumber int64    `json:"box_block_number"`
+	BoxBlockHash   string   `json:"box_block_hash"`
+	HolderAddress  string   `json:"holder_address"`
+	FeeAddress     string   `json:"fee_address"`
+	OrderStatus    int64    `json:"order_status"`
+	CreateDate     int64    `json:"create_date"`
+	UpdateDate     int64    `json:"update_date"`
+}
+
+type BoxCollect struct {
+	Id              int64    `json:"id"`
+	Tick0           string   `json:"tick0"`
+	Tick1           string   `json:"tick1"`
+	Max             *big.Int `json:"max"`
+	Amt0            *big.Int `json:"amt0"`
+	LiqAmt          *big.Int `json:"liqamt"`
+	LiqBlock        int64    `json:"liqblock"`
+	Amt1            *big.Int `json:"amt1"`
+	Amt0Finish      *big.Int `json:"amt0_finish"`
+	LiqAmtFinish    *big.Int `json:"liqamt_finish"`
+	HolderAddress   string   `json:"holder_address"`
+	ReservesAddress string   `json:"reserves_address"`
+	IsDel           int64    `json:"is_del"`
+	CreateDate      int64    `json:"create_date"`
+	UpdateDate      int64    `json:"update_date"`
+}
+
+type BoxAddress struct {
+	Id            int64    `json:"id"`
+	Tick          string   `json:"tick"`
+	HolderAddress string   `json:"holder_address"`
+	Amt           *big.Int `json:"amt"`
+	BlockNumber   int64    `json:"block_number"`
+	CreateDate    int64    `json:"create_date"`
+}
+
+// summary
+type SwapInfoSummary struct {
+	Id          int64    `json:"id"`
+	Tick        string   `json:"tick"`
+	Tick0       string   `json:"tick0"`
+	Tick1       string   `json:"tick1"`
+	OpenPrice   float64  `json:"open_price"`
+	ClosePrice  float64  `json:"close_price"`
+	LowestAsk   float64  `json:"lowest_ask"`
+	HighestBid  float64  `json:"highest_bid"`
+	BaseVolume  *big.Int `json:"base_volume"`
+	QuoteVolume *big.Int `json:"quote_volume"`
+	LastDate    string   `json:"last_date"`
+}
+
+type ExchangeInfoSummary struct {
+	Id          int64    `json:"id"`
+	Tick        string   `json:"tick"`
+	Tick0       string   `json:"tick0"`
+	Tick1       string   `json:"tick1"`
+	OpenPrice   float64  `json:"open_price"`
+	ClosePrice  float64  `json:"close_price"`
+	LowestAsk   float64  `json:"lowest_ask"`
+	HighestBid  float64  `json:"highest_bid"`
+	BaseVolume  *big.Int `json:"base_volume"`
+	QuoteVolume *big.Int `json:"quote_volume"`
+	LastDate    string   `json:"last_date"`
+}
+
+type ExchangeDrc20Collect struct {
+	Id         int64    `json:"id"`
+	Tick       string   `json:"tick"`
+	OldPrice   float64  `json:"old_price"`
+	LastPrice  float64  `json:"last_price"`
+	Amt        *big.Int `json:"amt"`
+	Holders    int64    `json:"holders"`
+	UpdateDate int64    `json:"update_date"`
+	CreateDate int64    `json:"create_date"`
 }
 
 // stake model

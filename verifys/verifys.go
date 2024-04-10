@@ -542,3 +542,122 @@ func (v *Verifys) verifyStakeGetallreward(si *utils.StakeInfo) error {
 
 	return nil
 }
+
+func (v *Verifys) VerifyExchange(ex *utils.ExchangeInfo) error {
+
+	switch ex.Op {
+	case "create":
+		return v.VerifyExchangeCreate(ex)
+	case "trade":
+		return v.VerifyExchangeTrade(ex)
+	case "cancel":
+		return v.VerifyExchangeCancel(ex)
+	default:
+		return fmt.Errorf("do not support the type of tokens")
+	}
+}
+
+func (v *Verifys) VerifyExchangeCreate(ex *utils.ExchangeInfo) error {
+	_, _, _, err := v.dbc.FindDrc20InfoSumByTick(ex.Tick0)
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	_, _, _, err = v.dbc.FindDrc20InfoSumByTick(ex.Tick1)
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if ex.Amt0.Cmp(big.NewInt(0)) < 1 || ex.Amt1.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	return nil
+}
+
+func (v *Verifys) VerifyExchangeTrade(ex *utils.ExchangeInfo) error {
+	if ex.Amt1.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	_, err := v.dbc.FindExchangeCollectByExId(ex.ExId)
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+	return nil
+}
+
+func (v *Verifys) VerifyExchangeCancel(ex *utils.ExchangeInfo) error {
+	if ex.Amt0.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	_, err := v.dbc.FindExchangeCollectByExId(ex.ExId)
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	return nil
+}
+
+func (v *Verifys) VerifyBox(box *utils.BoxInfo) error {
+
+	switch box.Op {
+	case "deploy":
+		return v.VerifyBoxDeploy(box)
+	case "mint":
+		return v.VerifyBoxMint(box)
+	default:
+		return fmt.Errorf("do not support the type of tokens")
+	}
+}
+
+func (v *Verifys) VerifyBoxDeploy(box *utils.BoxInfo) error {
+
+	if len(box.Tick0) < 2 || len(box.Tick0) > 8 {
+		return fmt.Errorf("the token symbol must be 2 or 8 letters")
+	}
+
+	_, _, _, err := v.dbc.FindDrc20InfoSumByTick(box.Tick0)
+	if err == nil {
+		return fmt.Errorf("has been deployed contracts")
+	}
+
+	if box.Max.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	if box.LiqAmt.Cmp(big.NewInt(0)) < 1 && box.LiqBlock < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	if box.LiqAmt.Cmp(big.NewInt(0)) > 0 && box.LiqBlock > 0 {
+		return fmt.Errorf("two cannot exist at the same time")
+	}
+
+	return nil
+}
+
+func (v *Verifys) VerifyBoxMint(box *utils.BoxInfo) error {
+
+	tx, err := v.dbc.SqlDB.Begin()
+	if err != nil {
+		return err
+	}
+
+	if box.Amt1.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	boxc, err := v.dbc.FindBoxCollectByTick(tx, box.Tick0)
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	liqa := big.NewInt(0).Add(boxc.LiqAmtFinish, box.Amt1)
+	if boxc.LiqAmt.Cmp(big.NewInt(0)) > 0 && liqa.Cmp(boxc.LiqAmt) > 0 {
+		return fmt.Errorf("the amount of tokens exceeds the maximum")
+	}
+
+	return nil
+}

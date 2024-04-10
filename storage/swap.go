@@ -9,14 +9,13 @@ import (
 	"strings"
 )
 
-func (c *DBClient) SwapCreate(swap *utils.SwapInfo, reservesAddress string, liquidityTotal *big.Int) error {
-	tx, err := c.SqlDB.Begin()
-	if err != nil {
-		return err
-	}
+const (
+	MINI_LIQUIDITY = 1000
+)
 
+func (c *DBClient) SwapCreate(tx *sql.Tx, swap *utils.SwapInfo, reservesAddress string, liquidityTotal *big.Int) error {
 	query := "INSERT INTO swap_liquidity (tick, tick0, tick1, holder_address, reserves_address, liquidity_total) VALUES (?, ?, ?, ?, ?, ?)"
-	_, err = tx.Exec(query, swap.Tick, swap.Tick0, swap.Tick1, swap.HolderAddress, reservesAddress, liquidityTotal.String())
+	_, err := tx.Exec(query, swap.Tick, swap.Tick0, swap.Tick1, swap.HolderAddress, reservesAddress, liquidityTotal.String())
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -42,6 +41,12 @@ func (c *DBClient) SwapCreate(swap *utils.SwapInfo, reservesAddress string, liqu
 	}
 
 	err = c.Mint(tx, swap.Tick, swap.HolderAddress, liquidityTotal, false, swap.SwapBlockNumber)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = c.Mint(tx, swap.Tick, reservesAddress, big.NewInt(MINI_LIQUIDITY), false, swap.SwapBlockNumber)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -182,13 +187,13 @@ func (c *DBClient) SwapNow(swap *utils.SwapInfo, reservesAddress string, amtin, 
 		return err
 	}
 
-	err = c.Transfer(tx, swap.Tick0, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunity, false, swap.SwapBlockNumber)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+	//err = e.Transfer(tx, swap.Tick0, reservesAddress, poolFeeAddress, amtoutFeeCommunity, false, swap.SwapBlockNumber)
+	//if err != nil {
+	//	tx.Rollback()
+	//	return err
+	//}
 
-	//err = c.Transfer(tx, swap.Tick1, reservesAddress, "DMmdAkMPXb9H1JfRYmkvpyby5EFgkVKmmQ", amtoutFeeCommunityOut, false, swap.SwapBlockNumber)
+	//err = e.Transfer(tx, swap.Tick1, reservesAddress, poolFeeAddress, amtoutFeeCommunityOut, false, swap.SwapBlockNumber)
 	//if err != nil {
 	//	tx.Rollback()
 	//	return err
