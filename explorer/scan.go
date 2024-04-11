@@ -126,6 +126,12 @@ func (e *Explorer) scan() error {
 			return err
 		}
 
+		err = dbtx.Commit()
+		if err != nil {
+			dbtx.Rollback()
+			return err
+		}
+
 		for _, tx := range block.Tx {
 
 			txhash, _ := chainhash.NewHashFromStr(tx)

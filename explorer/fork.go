@@ -209,6 +209,12 @@ func (e *Explorer) fork(height int64) error {
 		return err
 	}
 
+	err = e.dbc.DelBoxCollectFork(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return err

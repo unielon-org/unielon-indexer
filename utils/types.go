@@ -394,8 +394,8 @@ type BoxInfo struct {
 	HolderAddress  string   `json:"holder_address"`
 	FeeAddress     string   `json:"fee_address"`
 	OrderStatus    int64    `json:"order_status"`
-	CreateDate     int64    `json:"create_date"`
-	UpdateDate     int64    `json:"update_date"`
+	CreateDate     string   `json:"create_date"`
+	UpdateDate     string   `json:"update_date"`
 }
 
 type BoxCollect struct {
@@ -412,8 +412,8 @@ type BoxCollect struct {
 	HolderAddress   string   `json:"holder_address"`
 	ReservesAddress string   `json:"reserves_address"`
 	IsDel           int64    `json:"is_del"`
-	CreateDate      int64    `json:"create_date"`
-	UpdateDate      int64    `json:"update_date"`
+	CreateDate      string   `json:"create_date"`
+	UpdateDate      string   `json:"update_date"`
 }
 
 type BoxAddress struct {
@@ -422,7 +422,7 @@ type BoxAddress struct {
 	HolderAddress string   `json:"holder_address"`
 	Amt           *big.Int `json:"amt"`
 	BlockNumber   int64    `json:"block_number"`
-	CreateDate    int64    `json:"create_date"`
+	CreateDate    string   `json:"create_date"`
 }
 
 // summary

@@ -244,6 +244,15 @@ func (c *DBClient) InstallBoxAddress(tx *sql.Tx, ba *utils.BoxAddress) error {
 	return nil
 }
 
+func (c *DBClient) DelBoxCollectFork(tx *sql.Tx, height int64) error {
+	exec := "delete from box_collect where liqblock > ?"
+	_, err := tx.Exec(exec, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *DBClient) UpdateBoxInfo(ex *utils.BoxInfo) error {
 	query := "update box_info set fee_tx_hash = ?,  fee_tx_index = ?, fee_block_hash = ?, fee_block_number = ?, box_tx_hash = ?, box_tx_raw = ? where order_id = ?"
 	_, err := c.SqlDB.Exec(query, ex.FeeTxHash, ex.FeeTxIndex, ex.FeeBlockHash, ex.FeeBlockNumber, ex.BoxTxHash, ex.BoxTxRaw, ex.OrderId)
@@ -263,7 +272,7 @@ func (c *DBClient) UpdateBoxInfoErr(orderId, errInfo string) error {
 }
 
 func (c *DBClient) FindBoxInfoByFee(feeAddress string) (*utils.BoxInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, fee_address, holder_address,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM box_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
+	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, fee_address, holder_address,  update_date, create_date  FROM box_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
 	rows, err := c.SqlDB.Query(query, feeAddress)
 	if err != nil {
 		return nil, err
@@ -289,7 +298,7 @@ func (c *DBClient) FindBoxInfoByFee(feeAddress string) (*utils.BoxInfo, error) {
 }
 
 func (c *DBClient) FindBoxInfoByTxHash(txHash string) (*utils.BoxInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, box_tx_hash, box_tx_raw, box_block_hash, box_block_number, fee_address, holder_address, order_status, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM box_info where box_tx_hash = ?"
+	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, box_tx_hash, box_tx_raw, box_block_hash, box_block_number, fee_address, holder_address, order_status, update_date, create_date  FROM box_info where box_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, txHash)
 	if err != nil {
 		return nil, err
@@ -341,7 +350,7 @@ func (c *DBClient) FindBoxAddressInfo(orderId string) (*utils.AddressInfo, error
 
 func (c *DBClient) FindBoxInfo(orderId, op, tick0, tick1, holder_address string, limit, offset int64) ([]*utils.BoxInfo, int64, error) {
 
-	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, box_tx_hash, box_block_hash, box_block_number, fee_address, holder_address, order_status, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM box_info  "
+	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, box_tx_hash, box_block_hash, box_block_number, fee_address, holder_address, order_status, update_date, create_date FROM box_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -424,7 +433,7 @@ func (c *DBClient) FindBoxInfo(orderId, op, tick0, tick1, holder_address string,
 }
 
 func (c *DBClient) FindBoxCollect(tick0, tick1, holder_address string, limit, offset int64) ([]*utils.BoxCollect, int64, error) {
-	query := "SELECT  tick0, tick1, max_, amt0, liqamt, liqblock, amt1, amt0_finish, liqamt_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM box_collect  "
+	query := "SELECT  tick0, tick1, max_, amt0, liqamt, liqblock, amt1, amt0_finish, liqamt_finish, holder_address, reserves_address, update_date, create_date  FROM box_collect  "
 	where := "where"
 	whereAges := []any{}
 
@@ -523,7 +532,7 @@ func (c *DBClient) FindBoxCollectByTick(tx *sql.Tx, tick string) (*utils.BoxColl
 
 func (c *DBClient) FindBoxCollectByExId(exId string) (*utils.BoxCollect, error) {
 
-	query := "SELECT  tick0, tick1, amt0, amt1, amt0_finish, liqamt_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM box_collect where ex_id = ? and is_del = 0"
+	query := "SELECT  tick0, tick1, amt0, amt1, amt0_finish, liqamt_finish, holder_address, reserves_address, update_date, create_date  FROM box_collect where ex_id = ? and is_del = 0"
 	rows, err := c.SqlDB.Query(query, exId)
 	if err != nil {
 		return nil, err
@@ -549,7 +558,7 @@ func (c *DBClient) FindBoxCollectByExId(exId string) (*utils.BoxCollect, error) 
 
 func (c *DBClient) FindBoxCollectByHeight(height int64) ([]*utils.BoxCollect, error) {
 
-	query := "SELECT  tick0, tick1, amt0, amt1, max_, amt0_finish, liqamt_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM box_collect where liqblock = ? and is_del = 0"
+	query := "SELECT  tick0, tick1, amt0, amt1, max_, amt0_finish, liqamt_finish, holder_address, reserves_address, update_date, create_date FROM box_collect where liqblock = ? and is_del = 0"
 	rows, err := c.SqlDB.Query(query, height)
 	if err != nil {
 		return nil, err
@@ -577,7 +586,7 @@ func (c *DBClient) FindBoxCollectByHeight(height int64) ([]*utils.BoxCollect, er
 
 func (c *DBClient) FindBoxAddressByTick(tx *sql.Tx, tick string) ([]*utils.BoxAddress, error) {
 
-	query := "SELECT  tick, holder_address, amt, block_number,  UNIX_TIMESTAMP(create_date)  FROM box_address where tick = ?"
+	query := "SELECT  tick, holder_address, amt, block_number, create_date  FROM box_address where tick = ?"
 	rows, err := tx.Query(query, tick)
 	if err != nil {
 		return nil, err

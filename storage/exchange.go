@@ -192,7 +192,7 @@ func (c *DBClient) UpdateExchangeInfoErr(orderId, errInfo string) error {
 }
 
 func (c *DBClient) FindExchangeInfoByFee(feeAddress string) (*utils.ExchangeInfo, error) {
-	query := "SELECT  order_id, ex_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, fee_address, holder_address,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
+	query := "SELECT  order_id, ex_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, fee_address, holder_address,  update_date, create_date  FROM exchange_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
 	rows, err := c.SqlDB.Query(query, feeAddress)
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (c *DBClient) FindExchangeInfoByFee(feeAddress string) (*utils.ExchangeInfo
 }
 
 func (c *DBClient) FindExchangeInfoByTxHash(txHash string) (*utils.ExchangeInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_tx_raw, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_info where exchange_tx_hash = ?"
+	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_tx_raw, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status, update_date, create_date   FROM exchange_info where exchange_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, txHash)
 	if err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ func (c *DBClient) FindExchangeAddressInfo(orderId string) (*utils.AddressInfo, 
 
 func (c *DBClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, holder_address string, limit, offset int64) ([]*utils.ExchangeInfo, int64, error) {
 
-	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_info  "
+	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  update_date, create_date  FROM exchange_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -364,7 +364,7 @@ func (c *DBClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, holde
 
 func (c *DBClient) FindExchangeInfoByTick(op, tick, holder_address string, limit, offset int64) ([]*utils.ExchangeInfo, int64, error) {
 
-	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM exchange_info where op = ? and holder_address = ? and ( tick0 = ? or tick1 = ?) "
+	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  update_date, create_date FROM exchange_info where op = ? and holder_address = ? and ( tick0 = ? or tick1 = ?) "
 	order := " order by update_date desc "
 	lim := " LIMIT ? OFFSET ? "
 
@@ -397,7 +397,7 @@ func (c *DBClient) FindExchangeInfoByTick(op, tick, holder_address string, limit
 }
 
 func (c *DBClient) FindExchangeCollect(exId, tick0, tick1, holderAddress string, notDone, limit, offset int64) ([]*utils.ExchangeCollect, int64, error) {
-	query := "SELECT  ex_id, tick0, tick1, amt0, amt1, amt0_finish, amt1_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_collect  "
+	query := "SELECT  ex_id, tick0, tick1, amt0, amt1, amt0_finish, amt1_finish, holder_address, reserves_address, update_date, create_date  FROM exchange_collect  "
 
 	where := "where"
 	whereAges := []any{}
@@ -480,7 +480,7 @@ func (c *DBClient) FindExchangeCollect(exId, tick0, tick1, holderAddress string,
 
 func (c *DBClient) FindExchangeCollectByExId(exId string) (*utils.ExchangeCollect, error) {
 
-	query := "SELECT  ex_id, tick0, tick1, amt0, amt1, amt0_finish, amt1_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_collect where ex_id = ?"
+	query := "SELECT  ex_id, tick0, tick1, amt0, amt1, amt0_finish, amt1_finish, holder_address, reserves_address, update_date, create_date  FROM exchange_collect where ex_id = ?"
 	rows, err := c.SqlDB.Query(query, exId)
 	if err != nil {
 		return nil, err
