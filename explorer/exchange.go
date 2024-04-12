@@ -66,7 +66,7 @@ func (e *Explorer) exchangeDecode(tx *btcjson.TxRawResult, pushedData []byte, nu
 		return ex, nil
 	} else {
 		if err := e.dbc.InstallExchangeInfo(ex); err != nil {
-			return nil, fmt.Errorf("InstallSwapInfo err: %s", err.Error())
+			return nil, fmt.Errorf("InstallExchangeInfo err: %s", err.Error())
 		}
 	}
 

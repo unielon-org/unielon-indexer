@@ -37,30 +37,30 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 
 	if card.Op == "deploy" {
 
-		if len(tx.Vout) != 2 {
-			return nil, errors.New("mint op error, vout length is not 2")
-		}
+		//if len(tx.Vout) != 2 {
+		//	return nil, errors.New("mint op error, vout length is not 2")
+		//}
 
 		card.ReceiveAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 
-		if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
-			return nil, fmt.Errorf("The address is incorrect")
-		}
+		//if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
+		//	return nil, fmt.Errorf("The address is incorrect")
+		//}
 
 		if tx.Vout[0].Value != 0.001 {
 			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
 		}
 
-		if tx.Vout[1].Value < 100 {
-			return nil, fmt.Errorf("The balance is insufficient")
-		}
+		//if tx.Vout[1].Value < 100 {
+		//	return nil, fmt.Errorf("The balance is insufficient")
+		//}
 	}
 
 	if card.Op == "mint" {
 
-		if len(tx.Vout) != 2 {
-			return nil, errors.New("mint op error, vout length is not 2")
-		}
+		//if len(tx.Vout) != 2 {
+		//	return nil, errors.New("mint op error, vout length is not 2")
+		//}
 
 		card.ReceiveAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 		card.Repeat = int64(tx.Vout[0].Value / 0.001)
@@ -72,13 +72,15 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
 		}
 
-		if tx.Vout[1].Value < float64(card.Repeat)*0.5 {
-			return nil, fmt.Errorf("The balance is insufficient")
-		}
+		//
+		//if tx.Vout[1].Value < float64(card.Repeat)*0.5 {
+		//	return nil, fmt.Errorf("The balance is insufficient")
+		//}
 
-		if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
-			return nil, fmt.Errorf("The address is incorrect")
-		}
+		//
+		//if tx.Vout[1].ScriptPubKey.Addresses[0] != feeAddress {
+		//	return nil, fmt.Errorf("The address is incorrect")
+		//}
 	}
 
 	txhash0, _ := chainhash.NewHashFromStr(tx.Vin[0].Txid)

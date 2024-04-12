@@ -85,14 +85,15 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 		return fmt.Errorf("swapCreate FindSwapLiquidity error: %v", err)
 	}
 
-	tx, err := e.dbc.SqlDB.Begin()
-	if err != nil {
-		return err
-	}
+	reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(swap.Tick0+swap.Tick1), &chaincfg.MainNetParams)
+	swap.Tick = swap.Tick0 + "-SWAP-" + swap.Tick1
 
 	if info == nil {
-		reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(swap.Tick0+swap.Tick1), &chaincfg.MainNetParams)
-		swap.Tick = swap.Tick0 + "-SWAP-" + swap.Tick1
+
+		tx, err := e.dbc.SqlDB.Begin()
+		if err != nil {
+			return err
+		}
 		liquidityBase := new(big.Int).Sqrt(new(big.Int).Mul(swap.Amt0, swap.Amt1))
 		if liquidityBase.Cmp(big.NewInt(MINI_LIQUIDITY)) > 0 {
 			liquidityBase = new(big.Int).Sub(liquidityBase, big.NewInt(MINI_LIQUIDITY))
@@ -114,33 +115,7 @@ func (e Explorer) swapCreateOrAdd(swap *utils.SwapInfo) error {
 			tx.Rollback()
 			return err
 		}
-
-	} else if info.LiquidityTotal.Cmp(big.NewInt(0)) == 0 {
-
-		reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(swap.Tick0+swap.Tick1), &chaincfg.MainNetParams)
-
-		if swap.Amt0Min.Cmp(swap.Amt0) > 0 || swap.Amt1Min.Cmp(swap.Amt1) > 0 {
-			return fmt.Errorf("Error: amount minimun is greater than amount")
-		}
-
-		swap.Tick = swap.Tick0 + "-SWAP-" + swap.Tick1
-		liquidityBase := new(big.Int).Sqrt(new(big.Int).Mul(swap.Amt0, swap.Amt1))
-		if liquidityBase.Cmp(big.NewInt(MINI_LIQUIDITY)) > 0 {
-			liquidityBase = new(big.Int).Sub(liquidityBase, big.NewInt(MINI_LIQUIDITY))
-		}
-
-		swap.Amt0Out = swap.Amt0
-		swap.Amt1Out = swap.Amt1
-
-		err = e.dbc.SwapAdd(swap, reservesAddress.String(), swap.Amt0, swap.Amt1, liquidityBase)
-
-		if err != nil {
-			return fmt.Errorf("swapCreate SwapCreate error: %v", err)
-		}
-
 	} else {
-		swap.Tick = info.Tick
-		reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(swap.Tick0+swap.Tick1), &chaincfg.MainNetParams)
 
 		amt0Out := big.NewInt(0)
 		amt1Out := big.NewInt(0)
@@ -226,7 +201,7 @@ func (e Explorer) swapNow(swap *utils.SwapInfo) error {
 	amtMap[info.Tick0] = info.Amt0
 	amtMap[info.Tick1] = info.Amt1
 
-	amtfee0 := new(big.Int).Div(swap.Amt0, big.NewInt(100))
+	amtfee0 := new(big.Int).Div(swap.Amt0, big.NewInt(1000))
 	amtin := new(big.Int).Mul(amtfee0, big.NewInt(3))
 	amtin = new(big.Int).Sub(swap.Amt0, amtin)
 

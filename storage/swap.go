@@ -17,57 +17,43 @@ func (c *DBClient) SwapCreate(tx *sql.Tx, swap *utils.SwapInfo, reservesAddress 
 	query := "INSERT INTO swap_liquidity (tick, tick0, tick1, holder_address, reserves_address, liquidity_total) VALUES (?, ?, ?, ?, ?, ?)"
 	_, err := tx.Exec(query, swap.Tick, swap.Tick0, swap.Tick1, swap.HolderAddress, reservesAddress, liquidityTotal.String())
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	err = c.Transfer(tx, swap.Tick0, swap.HolderAddress, reservesAddress, swap.Amt0, false, swap.SwapBlockNumber)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	err = c.Transfer(tx, swap.Tick1, swap.HolderAddress, reservesAddress, swap.Amt1, false, swap.SwapBlockNumber)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	execQ := "INSERT INTO drc20_info (tick, `max_`, lim_, receive_address, drc20_tx_hash) VALUES (?, ?, ?, ?, ?)"
 	_, err = tx.Exec(execQ, swap.Tick, "99999999999999999999999999999999999999999", "0", reservesAddress, swap.SwapTxHash)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	err = c.Mint(tx, swap.Tick, swap.HolderAddress, liquidityTotal, false, swap.SwapBlockNumber)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	err = c.Mint(tx, swap.Tick, reservesAddress, big.NewInt(MINI_LIQUIDITY), false, swap.SwapBlockNumber)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	err = c.UpdateLiquidity(tx, swap.Tick)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	query = "update swap_info set amt0_out = ?, amt1_out = ?, liquidity = ?, swap_block_hash = ?, swap_block_number = ?, order_status = 0  where swap_tx_hash = ?"
 	_, err = tx.Exec(query, swap.Amt0Out.String(), swap.Amt1Out.String(), liquidityTotal.String(), swap.SwapBlockHash, swap.SwapBlockNumber, swap.SwapTxHash)
 	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
 		return err
 	}
 

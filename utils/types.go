@@ -200,8 +200,8 @@ type ExchangeInfo struct {
 	HolderAddress       string   `json:"holder_address"`
 	FeeAddress          string   `json:"fee_address"`
 	OrderStatus         int64    `json:"order_status"`
-	CreateDate          int64    `json:"create_date"`
-	UpdateDate          int64    `json:"update_date"`
+	CreateDate          string   `json:"create_date"`
+	UpdateDate          string   `json:"update_date"`
 }
 
 type ExchangeCollect struct {
@@ -215,8 +215,8 @@ type ExchangeCollect struct {
 	Amt1Finish      *big.Int `json:"amt1_finish"`
 	HolderAddress   string   `json:"holder_address"`
 	ReservesAddress string   `json:"reserves_address"`
-	CreateDate      int64    `json:"create_date"`
-	UpdateDate      int64    `json:"update_date"`
+	CreateDate      string   `json:"create_date"`
+	UpdateDate      string   `json:"update_date"`
 }
 
 // SWAP
@@ -461,8 +461,8 @@ type ExchangeDrc20Collect struct {
 	LastPrice  float64  `json:"last_price"`
 	Amt        *big.Int `json:"amt"`
 	Holders    int64    `json:"holders"`
-	UpdateDate int64    `json:"update_date"`
-	CreateDate int64    `json:"create_date"`
+	UpdateDate string   `json:"update_date"`
+	CreateDate string   `json:"create_date"`
 }
 
 // stake model
