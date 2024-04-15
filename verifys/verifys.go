@@ -592,9 +592,13 @@ func (v *Verifys) VerifyExchangeCancel(ex *utils.ExchangeInfo) error {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
 	}
 
-	_, err := v.dbc.FindExchangeCollectByExId(ex.ExId)
+	exc, err := v.dbc.FindExchangeCollectByExId(ex.ExId)
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if exc.HolderAddress == ex.HolderAddress {
+		return fmt.Errorf("the same address cannot be traded")
 	}
 
 	return nil

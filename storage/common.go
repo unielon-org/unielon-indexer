@@ -44,6 +44,14 @@ func (c *DBClient) Transfer(tx *sql.Tx, tick, from, to string, amt *big.Int, for
 	defer c.lock.Unlock()
 	log.Info("explorer", "Transfer", "start", "tick", tick, "from", from, "to", to, "amt", amt.String(), "fork", fork)
 
+	if amt.Cmp(big.NewInt(0)) < 1 {
+		return fmt.Errorf("Transfer amt < 0")
+	}
+
+	if from == to {
+		return fmt.Errorf("Transfer from == to")
+	}
+
 	count1, err := c.FindSwapDrc20AddressInfoByTick(tx, tick, from)
 	if err != nil {
 		return fmt.Errorf("Transfer FindDrc20AddressInfoByTick err: %s tick: %s from : %s", err.Error(), tick, from)
