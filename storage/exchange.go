@@ -230,14 +230,6 @@ func (c *DBClient) DelExchangeRevert(tx *sql.Tx, height int64) error {
 	}
 	return nil
 }
-func (c *DBClient) UpdateExchangeInfo(ex *utils.ExchangeInfo) error {
-	query := "update exchange_info set fee_tx_hash = ?,  fee_tx_index = ?, fee_block_hash = ?, fee_block_number = ?, exchange_tx_hash = ?, exchange_tx_raw = ? where order_id = ?"
-	_, err := c.SqlDB.Exec(query, ex.FeeTxHash, ex.FeeTxIndex, ex.FeeBlockHash, ex.FeeBlockNumber, ex.ExchangeTxHash, ex.ExchangeTxRaw, ex.OrderId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func (c *DBClient) UpdateExchangeInfoErr(orderId, errInfo string) error {
 	query := "update exchange_info set err_info = ?, order_status = 1  where order_id = ?"
@@ -281,7 +273,7 @@ func (c *DBClient) FindExchangeRevertByNumber(height int64) ([]*utils.ExchangeRe
 	return exs, nil
 }
 func (c *DBClient) FindExchangeInfoByFee(feeAddress string) (*utils.ExchangeInfo, error) {
-	query := "SELECT  order_id, ex_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, fee_address, holder_address,  update_date, create_date  FROM exchange_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
+	query := "SELECT  order_id, ex_id, op, tick0, tick1, amt0, amt1, fee_address, holder_address,  update_date, create_date  FROM exchange_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
 	rows, err := c.SqlDB.Query(query, feeAddress)
 	if err != nil {
 		return nil, err
@@ -291,7 +283,7 @@ func (c *DBClient) FindExchangeInfoByFee(feeAddress string) (*utils.ExchangeInfo
 	if rows.Next() {
 		ex := &utils.ExchangeInfo{}
 		var amt0, amt1 string
-		err := rows.Scan(&ex.OrderId, &ex.ExId, &ex.Op, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.FeeTxHash, &ex.FeeTxIndex, &ex.FeeBlockHash, &ex.FeeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.UpdateDate, &ex.CreateDate)
+		err := rows.Scan(&ex.OrderId, &ex.ExId, &ex.Op, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.FeeAddress, &ex.HolderAddress, &ex.UpdateDate, &ex.CreateDate)
 		if err != nil {
 			return nil, err
 		}
@@ -304,7 +296,7 @@ func (c *DBClient) FindExchangeInfoByFee(feeAddress string) (*utils.ExchangeInfo
 }
 
 func (c *DBClient) FindExchangeInfoByTxHash(txHash string) (*utils.ExchangeInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_tx_raw, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status, update_date, create_date   FROM exchange_info where exchange_tx_hash = ?"
+	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1,  exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status, update_date, create_date   FROM exchange_info where exchange_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, txHash)
 	if err != nil {
 		return nil, err
@@ -314,7 +306,7 @@ func (c *DBClient) FindExchangeInfoByTxHash(txHash string) (*utils.ExchangeInfo,
 	if rows.Next() {
 		ex := &utils.ExchangeInfo{}
 		var amt0, amt1 string
-		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.FeeTxHash, &ex.FeeTxIndex, &ex.FeeBlockHash, &ex.FeeBlockNumber, &ex.ExchangeTxHash, &ex.ExchangeTxRaw, &ex.ExchangeBlockHash, &ex.ExchangeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
+		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.ExchangeTxHash, &ex.ExchangeBlockHash, &ex.ExchangeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
 		if err != nil {
 			return nil, err
 		}
@@ -354,7 +346,7 @@ func (c *DBClient) FindExchangeAddressInfo(orderId string) (*utils.AddressInfo, 
 
 func (c *DBClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, holder_address string, limit, offset int64) ([]*utils.ExchangeInfo, int64, error) {
 
-	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  update_date, create_date  FROM exchange_info  "
+	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  update_date, create_date  FROM exchange_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -433,7 +425,7 @@ func (c *DBClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, holde
 	for rows.Next() {
 		ex := &utils.ExchangeInfo{}
 		var amt0, amt1 string
-		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.ExId, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.FeeTxHash, &ex.FeeTxIndex, &ex.FeeBlockHash, &ex.FeeBlockNumber, &ex.ExchangeTxHash, &ex.ExchangeBlockHash, &ex.ExchangeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
+		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.ExId, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.ExchangeTxHash, &ex.ExchangeBlockHash, &ex.ExchangeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -453,7 +445,7 @@ func (c *DBClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, holde
 
 func (c *DBClient) FindExchangeInfoByTick(op, tick, holder_address string, limit, offset int64) ([]*utils.ExchangeInfo, int64, error) {
 
-	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  update_date, create_date FROM exchange_info where op = ? and holder_address = ? and ( tick0 = ? or tick1 = ?) "
+	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, exchange_tx_hash, exchange_block_hash, exchange_block_number, fee_address, holder_address, order_status,  update_date, create_date FROM exchange_info where op = ? and holder_address = ? and ( tick0 = ? or tick1 = ?) "
 	order := " order by update_date desc "
 	lim := " LIMIT ? OFFSET ? "
 
@@ -467,7 +459,7 @@ func (c *DBClient) FindExchangeInfoByTick(op, tick, holder_address string, limit
 	for rows.Next() {
 		ex := &utils.ExchangeInfo{}
 		var amt0, amt1 string
-		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.ExId, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.FeeTxHash, &ex.FeeTxIndex, &ex.FeeBlockHash, &ex.FeeBlockNumber, &ex.ExchangeTxHash, &ex.ExchangeBlockHash, &ex.ExchangeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
+		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.ExId, &ex.Tick0, &ex.Tick1, &amt0, &amt1, &ex.ExchangeTxHash, &ex.ExchangeBlockHash, &ex.ExchangeBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
 		if err != nil {
 			return nil, 0, err
 		}
