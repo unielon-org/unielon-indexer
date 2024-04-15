@@ -314,7 +314,7 @@ func (c *DBClient) FindBoxInfoByFee(feeAddress string) (*utils.BoxInfo, error) {
 }
 
 func (c *DBClient) FindBoxInfoByTxHash(txHash string) (*utils.BoxInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, box_tx_hash, box_tx_raw, box_block_hash, box_block_number, fee_address, holder_address, order_status, update_date, create_date  FROM box_info where box_tx_hash = ?"
+	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, box_tx_hash, box_block_hash, box_block_number, fee_address, holder_address, order_status, update_date, create_date  FROM box_info where box_tx_hash = ?"
 	rows, err := c.SqlDB.Query(query, txHash)
 	if err != nil {
 		return nil, err
@@ -324,7 +324,7 @@ func (c *DBClient) FindBoxInfoByTxHash(txHash string) (*utils.BoxInfo, error) {
 	if rows.Next() {
 		ex := &utils.BoxInfo{}
 		var max, amt0, liqamt, amt1 string
-		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.Tick0, &ex.Tick1, &max, &amt0, &liqamt, &ex.LiqBlock, &amt1, &ex.BoxTxHash, &ex.BoxTxRaw, &ex.BoxBlockHash, &ex.BoxBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
+		err := rows.Scan(&ex.OrderId, &ex.Op, &ex.Tick0, &ex.Tick1, &max, &amt0, &liqamt, &ex.LiqBlock, &amt1, &ex.BoxTxHash, &ex.BoxBlockHash, &ex.BoxBlockNumber, &ex.FeeAddress, &ex.HolderAddress, &ex.OrderStatus, &ex.UpdateDate, &ex.CreateDate)
 		if err != nil {
 			return nil, err
 		}
