@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/dogecoinw/doged/btcutil"
 	"github.com/unielon-org/unielon-indexer/utils"
@@ -21,6 +22,18 @@ func (c *DBClient) ExchangeCreate(ex *utils.ExchangeInfo, reservesAddress string
 	}
 
 	err = c.Transfer(tx, ex.Tick0, ex.HolderAddress, reservesAddress, ex.Amt0, false, ex.ExchangeBlockNumber)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	exr := &utils.ExchangeRevert{
+		Op:   "create",
+		Tick: ex.Tick0,
+		Exid: ex.ExId,
+	}
+
+	err = c.InstallExchangeRevert(tx, exr)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -72,6 +85,20 @@ func (c *DBClient) ExchangeTrade(ex *utils.ExchangeInfo) error {
 
 	query := "update exchange_collect set amt0_finish = ?, amt1_finish = ? where ex_id = ?"
 	_, err = tx.Exec(query, amt0Finish.String(), amt1Finish.String(), ex.ExId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	exr := &utils.ExchangeRevert{
+		Op:   "trade",
+		Tick: exc.Tick0,
+		Exid: ex.ExId,
+		Amt0: amt0Out,
+		Amt1: ex.Amt1,
+	}
+
+	err = c.InstallExchangeRevert(tx, exr)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -137,6 +164,19 @@ func (c *DBClient) ExchangeCancel(ex *utils.ExchangeInfo) error {
 		return err
 	}
 
+	exr := &utils.ExchangeRevert{
+		Op:   "cancel",
+		Tick: exc.Tick0,
+		Exid: ex.ExId,
+		Amt0: ex.Amt0,
+	}
+
+	err = c.InstallExchangeRevert(tx, exr)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	query = "update exchange_info set  tick0 = ?, tick1 = ?, exchange_block_hash = ?, exchange_block_number = ?, order_status = 0  where exchange_tx_hash = ?"
 	_, err = tx.Exec(query, exc.Tick0, exc.Tick1, ex.ExchangeBlockHash, ex.ExchangeBlockNumber, ex.ExchangeTxHash)
 	if err != nil {
@@ -173,6 +213,23 @@ func (c *DBClient) InstallExchangeInfo(ex *utils.ExchangeInfo) error {
 	return nil
 }
 
+func (c *DBClient) InstallExchangeRevert(tx *sql.Tx, ex *utils.ExchangeRevert) error {
+	exec := "INSERT INTO exchange_revert (op, tick, exid, amt0, amt1, block_number) VALUES (?, ?, ?, ?, ?, ?)"
+	_, err := tx.Exec(exec, ex.Op, ex.Tick, ex.Exid, ex.Amt0.String(), ex.Amt1.String(), ex.BlockNumber)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) DelExchangeRevert(tx *sql.Tx, height int64) error {
+	query := "delete from exchange_revert where block_number > ?"
+	_, err := tx.Exec(query, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (c *DBClient) UpdateExchangeInfo(ex *utils.ExchangeInfo) error {
 	query := "update exchange_info set fee_tx_hash = ?,  fee_tx_index = ?, fee_block_hash = ?, fee_block_number = ?, exchange_tx_hash = ?, exchange_tx_raw = ? where order_id = ?"
 	_, err := c.SqlDB.Exec(query, ex.FeeTxHash, ex.FeeTxIndex, ex.FeeBlockHash, ex.FeeBlockNumber, ex.ExchangeTxHash, ex.ExchangeTxRaw, ex.OrderId)
@@ -191,6 +248,38 @@ func (c *DBClient) UpdateExchangeInfoErr(orderId, errInfo string) error {
 	return nil
 }
 
+func (c *DBClient) UpdateExchangeInfoFork(tx *sql.Tx, height int64) error {
+	query := "update exchange_info set exchange_block_number = 0, exchange_block_hash = '', order_status = 0 where exchange_block_number > ?"
+	_, err := tx.Exec(query, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) FindExchangeRevertByNumber(height int64) ([]*utils.ExchangeRevert, error) {
+	query := "SELECT  op, tick, exid, amt0, amt1, block_number  FROM exchange_revert where  block_number > ?  order by id desc "
+	rows, err := c.SqlDB.Query(query, height)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	exs := []*utils.ExchangeRevert{}
+	for rows.Next() {
+		ex := &utils.ExchangeRevert{}
+		var amt0, amt1 string
+		err := rows.Scan(&ex.Op, &ex.Tick, &ex.Exid, &amt0, &amt1, &ex.BlockNumber)
+		if err != nil {
+			return nil, err
+		}
+
+		ex.Amt0, _ = utils.ConvetStr(amt0)
+		ex.Amt1, _ = utils.ConvetStr(amt1)
+		exs = append(exs, ex)
+	}
+	return exs, nil
+}
 func (c *DBClient) FindExchangeInfoByFee(feeAddress string) (*utils.ExchangeInfo, error) {
 	query := "SELECT  order_id, ex_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, fee_tx_index, fee_block_hash, fee_block_number, fee_address, holder_address,  update_date, create_date  FROM exchange_info where fee_address = ? and fee_tx_hash = '' order by create_date desc"
 	rows, err := c.SqlDB.Query(query, feeAddress)

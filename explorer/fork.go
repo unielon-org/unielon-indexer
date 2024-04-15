@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dogecoinw/go-dogecoin/log"
+	"github.com/unielon-org/unielon-indexer/utils"
+	"math/big"
 )
 
 func (e *Explorer) forkBack() error {
@@ -83,6 +85,18 @@ func (e *Explorer) fork(height int64) error {
 		return fmt.Errorf("fork UpdateNftInfoFork error: %v", err)
 	}
 
+	err = e.dbc.UpdateBoxInfoFork(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("fork UpdateBoxInfoFork error: %v", err)
+	}
+
+	err = e.dbc.UpdateExchangeInfoFork(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("fork UpdateExchangeInfoFork error: %v", err)
+	}
+
 	swapReverts, err := e.dbc.FindRevertByNumber(height)
 	if err != nil {
 		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
@@ -153,6 +167,89 @@ func (e *Explorer) fork(height int64) error {
 		return err
 	}
 
+	exchangeReverts, err := e.dbc.FindExchangeRevertByNumber(height)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("swapFork FindSwapRevertByNumber error: %v", err)
+	}
+
+	for _, revert := range exchangeReverts {
+		if revert.Op == "create" {
+			del := "delete from exchange_collect where ex_id = ?"
+			_, err := tx.Exec(del, revert.Exid)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("delete exchange_collect error: %v", err)
+			}
+		}
+
+		if revert.Op == "trade" {
+
+			exc := "select amt0_finish, amt1_finish from exchange_collect where ex_id = ?"
+			rows, err := tx.Query(exc, revert.Exid)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("select exchange_collect error: %v", err)
+			}
+
+			if rows.Next() {
+				var amt0Finish, amt1Finish string
+				err = rows.Scan(&amt0Finish, &amt1Finish)
+				if err != nil {
+					tx.Rollback()
+					return fmt.Errorf("scan exchange_collect error: %v", err)
+				}
+
+				amt0, _ := utils.ConvetStr(amt0Finish)
+				amt1, _ := utils.ConvetStr(amt1Finish)
+
+				amt0_0 := big.NewInt(0).Sub(amt0, revert.Amt0)
+				amt1_1 := big.NewInt(0).Sub(amt1, revert.Amt1)
+
+				update := "update exchange_collect set amt0_finish = ?, amt1_finish = ? where ex_id = ?"
+				_, err = tx.Exec(update, amt0_0.String(), amt1_1.String(), revert.Exid)
+				if err != nil {
+					tx.Rollback()
+					return fmt.Errorf("update exchange_collect error: %v", err)
+				}
+			}
+		}
+
+		if revert.Op == "cancel" {
+
+			exc := "select amt0_finish from exchange_collect where ex_id = ?"
+			rows, err := tx.Query(exc, revert.Exid)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("select exchange_collect error: %v", err)
+			}
+
+			if rows.Next() {
+				var amt0Finish string
+				err = rows.Scan(&amt0Finish)
+				if err != nil {
+					tx.Rollback()
+					return fmt.Errorf("scan exchange_collect error: %v", err)
+				}
+
+				amt0, _ := utils.ConvetStr(amt0Finish)
+				amt0_0 := big.NewInt(0).Add(amt0, revert.Amt0)
+
+				update := "update exchange_collect set amt0_finish = ? where ex_id = ?"
+				_, err = tx.Exec(update, amt0_0.String(), revert.Exid)
+				if err != nil {
+					tx.Rollback()
+					return fmt.Errorf("update exchange_collect error: %v", err)
+				}
+			}
+		}
+	}
+
+	err = e.dbc.DelExchangeRevert(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 	stakeReverts, err := e.dbc.FindStakeRevertByNumber(height)
 	if err != nil {
 		tx.Rollback()
@@ -209,7 +306,13 @@ func (e *Explorer) fork(height int64) error {
 		return err
 	}
 
-	err = e.dbc.DelBoxCollectFork(tx, height)
+	err = e.dbc.DelBoxAddressFork(tx, height)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = e.dbc.UpdateBoxCollectFork(tx, height)
 	if err != nil {
 		tx.Rollback()
 		return err

@@ -465,6 +465,18 @@ type ExchangeDrc20Collect struct {
 	CreateDate string   `json:"create_date"`
 }
 
+type ExchangeRevert struct {
+	Id          int64    `json:"id"`
+	Op          string   `json:"op"`
+	Tick        string   `json:"tick"`
+	Exid        string   `json:"exid"`
+	Amt0        *big.Int `json:"amt0"`
+	Amt1        *big.Int `json:"amt1"`
+	BlockNumber int64    `json:"block_number"`
+	UpdateDate  string   `json:"update_date"`
+	CreateDate  string   `json:"create_date"`
+}
+
 // stake model
 type StakeInfo struct {
 	OrderId          string         `json:"order_id"`

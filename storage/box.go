@@ -244,8 +244,8 @@ func (c *DBClient) InstallBoxAddress(tx *sql.Tx, ba *utils.BoxAddress) error {
 	return nil
 }
 
-func (c *DBClient) DelBoxCollectFork(tx *sql.Tx, height int64) error {
-	exec := "delete from box_collect where liqblock > ?"
+func (c *DBClient) DelBoxAddressFork(tx *sql.Tx, height int64) error {
+	exec := "delete from box_address where block_number > ?"
 	_, err := tx.Exec(exec, height)
 	if err != nil {
 		return err
@@ -253,6 +253,30 @@ func (c *DBClient) DelBoxCollectFork(tx *sql.Tx, height int64) error {
 	return nil
 }
 
+func (c *DBClient) UpdateBoxCollectFork(tx *sql.Tx, height int64) error {
+	update := "update box_collect a, drc20_address_info b set a.liqamt_finish = b.amt_sum where a.tick1 = b.tick and a.reserves_address = b.receive_address"
+	_, err := tx.Exec(update)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	update = "update box_collect set is_del = 0 where liqblock > ? "
+	_, err = tx.Exec(update, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *DBClient) UpdateBoxInfoFork(tx *sql.Tx, height int64) error {
+	query := "update box_info set box_block_number = 0, box_block_hash = '', order_status = 0 where box_block_number > ?"
+	_, err := tx.Exec(query, height)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (c *DBClient) UpdateBoxInfo(ex *utils.BoxInfo) error {
 	query := "update box_info set fee_tx_hash = ?,  fee_tx_index = ?, fee_block_hash = ?, fee_block_number = ?, box_tx_hash = ?, box_tx_raw = ? where order_id = ?"
 	_, err := c.SqlDB.Exec(query, ex.FeeTxHash, ex.FeeTxIndex, ex.FeeBlockHash, ex.FeeBlockNumber, ex.BoxTxHash, ex.BoxTxRaw, ex.OrderId)
