@@ -32,7 +32,7 @@ func NewSqliteClient(cfg utils.SqliteConfig) *DBClient {
 	}
 
 	_, err = db.Exec("PRAGMA journal_mode=WAL;")
-	_, err = db.Exec("PRAGMA wal_autocheckpoint=1000;")
+	_, err = db.Exec("PRAGMA wal_autocheckpoint=10000;")
 	if err != nil {
 		log.Error("NewMysqlClient", "err", err)
 		return nil
