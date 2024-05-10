@@ -91,6 +91,7 @@ func (e *Explorer) scan() error {
 	}
 
 	for ; e.fromBlock < blockCount; e.fromBlock++ {
+
 		err := e.forkBack()
 		if err != nil {
 			return fmt.Errorf("scan forkBack err: %s", err.Error())
