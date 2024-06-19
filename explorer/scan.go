@@ -114,24 +114,24 @@ func (e *Explorer) scan() error {
 		}
 
 		// del
-		dbtx, err := e.dbc.SqlDB.Begin()
-		err = e.dbc.DelStakeRewardRevert2(dbtx, e.fromBlock-1000)
-		if err != nil {
-			dbtx.Rollback()
-			return err
-		}
+		//dbtx, err := e.dbc.SqlDB.Begin()
+		//err = e.dbc.DelStakeRewardRevert2(dbtx, e.fromBlock-1000)
+		//if err != nil {
+		//	dbtx.Rollback()
+		//	return err
+		//}
+		//
+		//err = e.dbc.DelStakeRevert2(dbtx, e.fromBlock-1000)
+		//if err != nil {
+		//	dbtx.Rollback()
+		//	return err
+		//}
 
-		err = e.dbc.DelStakeRevert2(dbtx, e.fromBlock-1000)
-		if err != nil {
-			dbtx.Rollback()
-			return err
-		}
-
-		err = dbtx.Commit()
-		if err != nil {
-			dbtx.Rollback()
-			return err
-		}
+		//err = dbtx.Commit()
+		//if err != nil {
+		//	dbtx.Rollback()
+		//	return err
+		//}
 
 		for _, tx := range block.Tx {
 

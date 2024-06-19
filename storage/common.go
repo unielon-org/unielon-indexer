@@ -10,6 +10,10 @@ import (
 )
 
 func (c *DBClient) ScheduledTasks(height int64) error {
+	if height >= 5260645 {
+		return nil
+	}
+
 	s := time.Now()
 
 	tx, err := c.SqlDB.Begin()
