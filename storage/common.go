@@ -10,9 +10,6 @@ import (
 )
 
 func (c *DBClient) ScheduledTasks(height int64) error {
-	if height >= 5260645 {
-		return nil
-	}
 
 	s := time.Now()
 
@@ -21,10 +18,12 @@ func (c *DBClient) ScheduledTasks(height int64) error {
 		return err
 	}
 
-	err = c.StakeUpdatePoolScheduled(tx, height)
-	if err != nil {
-		tx.Rollback()
-		return err
+	if height < 5260645 {
+		err = c.StakeUpdatePoolScheduled(tx, height)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	err = c.BoxDeployScheduled(tx, height)
