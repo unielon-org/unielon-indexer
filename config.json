@@ -16,7 +16,7 @@
     "port": 3306,
     "user_name": "root",
     "pass_word": "root",
-    "database": "unielon_dev_1"
+    "database": "unielon"
   },
   "chain": {
     "chain_name": "dogecoin",
