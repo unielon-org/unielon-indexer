@@ -1,4 +1,4 @@
-package router
+package router_v3
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 func (r *Router) FindNftAll(c *gin.Context) {
 
-	cards, total, err := r.dbc.FindNftAll()
+	cards, total, err := r.mysql.FindNftAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -39,7 +39,7 @@ func (r *Router) FindNftByTick(c *gin.Context) {
 		return
 	}
 
-	nfts, err := r.dbc.FindNftCollectAllByTick(params.Tick)
+	nfts, err := r.mysql.FindNftCollectAllByTick(params.Tick)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -70,7 +70,7 @@ func (r *Router) FindNftByTickAndId(c *gin.Context) {
 		return
 	}
 
-	nfts, err := r.dbc.FindNftCollectAllByTickAndId(params.Tick, params.TickId)
+	nfts, err := r.mysql.FindNftCollectAllByTickAndId(params.Tick, params.TickId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -107,9 +107,9 @@ func (r *Router) FindNftHolders(c *gin.Context) {
 		p.Limit = 50
 	}
 
-	cards, total, err := r.dbc.FindNftHoldersByTick(p.Tick, p.Limit, p.OffSet)
+	cards, total, err := r.mysql.FindNftHoldersByTick(p.Tick, p.Limit, p.OffSet)
 	if err != nil {
-		log.Error("Router", "FindNftHoldersByTick", fmt.Sprintf("dbc.FindNftHoldersByTick is err:%s", err.Error()))
+		log.Error("Router", "FindNftHoldersByTick", fmt.Sprintf("mysql.FindNftHoldersByTick is err:%s", err.Error()))
 		c.JSON(http.StatusInternalServerError, nil)
 		return
 	}
@@ -138,7 +138,7 @@ func (r *Router) NftInfoById(c *gin.Context) {
 	result.Code = 200
 	result.Msg = "success"
 
-	swapInfo, err := r.dbc.FindNftInfoById(params.OrderId)
+	swapInfo, err := r.mysql.FindNftInfoById(params.OrderId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -148,7 +148,6 @@ func (r *Router) NftInfoById(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// 获取地址下的所有的订单
 func (r *Router) NftInfo(c *gin.Context) {
 	params := &struct {
 		OrderId       string `json:"order_id"`
@@ -167,7 +166,7 @@ func (r *Router) NftInfo(c *gin.Context) {
 	result.Code = 200
 	result.Msg = "success"
 
-	wdogeInfos, total, err := r.dbc.FindNftInfo(params.OrderId, params.Op, params.HolderAddress, params.Limit, params.OffSet)
+	wdogeInfos, total, err := r.mysql.FindNftInfo(params.OrderId, params.Op, params.HolderAddress, params.Limit, params.OffSet)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -200,7 +199,7 @@ func (r *Router) FindNftByAddress(c *gin.Context) {
 		return
 	}
 
-	nacs, total, err := r.dbc.FindNftByAddressTick(p.HolderAddress, p.Tick, p.Limit, p.OffSet)
+	nacs, total, err := r.mysql.FindNftByAddressTick(p.HolderAddress, p.Tick, p.Limit, p.OffSet)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return

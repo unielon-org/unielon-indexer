@@ -1,15 +1,24 @@
 package explorer
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/dogecoinw/doged/btcjson"
 	"github.com/dogecoinw/doged/chaincfg/chainhash"
+	"github.com/dogecoinw/go-dogecoin/log"
 	"github.com/google/uuid"
+	"github.com/unielon-org/unielon-indexer/models"
 	"github.com/unielon-org/unielon-indexer/utils"
+	"gorm.io/gorm"
 )
 
-func (e *Explorer) nftDecode(tx *btcjson.TxRawResult, number int64) (*utils.NFTInfo, error) {
+func (e *Explorer) nftDecode(tx *btcjson.TxRawResult, number int64) (*models.NftInfo, error) {
+
+	err := e.dbc.DB.Where("tx_hash = ?", tx.Hash).First(&models.NftInfo{}).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("nft already exist or err %s", tx.Hash)
+	}
 
 	param, err := e.reDecodeNft(tx)
 	if err != nil {
@@ -24,9 +33,9 @@ func (e *Explorer) nftDecode(tx *btcjson.TxRawResult, number int64) (*utils.NFTI
 	nft.OrderId = uuid.New().String()
 	nft.FeeTxHash = tx.Vin[0].Txid
 
-	nft.NftTxHash = tx.Hash
-	nft.NftBlockHash = tx.BlockHash
-	nft.NftBlockNumber = number
+	nft.TxHash = tx.Hash
+	nft.BlockHash = tx.BlockHash
+	nft.BlockNumber = number
 
 	if nft.Op == "deploy" {
 
@@ -93,67 +102,88 @@ func (e *Explorer) nftDecode(tx *btcjson.TxRawResult, number int64) (*utils.NFTI
 	}
 
 	nft.FeeAddress = txRawResult0.Vout[tx.Vin[0].Vout].ScriptPubKey.Addresses[0]
-	nft.FeeAddressAll = txRawResult0.Vout[tx.Vin[0].Vout].ScriptPubKey.Addresses[0]
 
-	nfts, err := e.dbc.FindNftInfoByTxHash(nft.NftTxHash)
+	reader := bytes.NewReader(nft.ImageData)
+	hash, _ := e.ipfs.Add(reader)
+	nft.ImagePath = "https://ipfs.unielon.com/ipfs/" + hash
+
+	err = e.dbc.DB.Create(nft).Error
 	if err != nil {
-		return nil, fmt.Errorf("FindNftInfoByTxHash err: %s", err.Error())
+		return nil, fmt.Errorf("InstallNftInfo err: %v", err)
 	}
 
-	if nfts != nil {
-		if nfts.NftBlockNumber != 0 {
-			return nil, fmt.Errorf("nft already exist or err %s", nft.NftTxHash)
-		}
-		nft.OrderId = nfts.OrderId
-		return nft, nil
-	} else {
-		if err := e.dbc.InstallNftInfo(nft); err != nil {
-			return nil, fmt.Errorf("InstallNftInfo err: %v", err)
-		}
-	}
 	return nft, nil
 }
 
-func (e *Explorer) nftDeployOrMintOrTransfer(nft *utils.NFTInfo, height int64) error {
+func (e *Explorer) nftDeploy(nft *models.NftInfo) error {
+	log.Info("explorer", "p", "nft/ai", "op", "deploy", "tx_hash", nft.TxHash)
 
-	tx, err := e.dbc.SqlDB.Begin()
-	if err != nil {
-		return fmt.Errorf("fork Begin err: %s order_id: %s", err.Error(), nft.OrderId)
-	}
-
-	if nft.Op == "deploy" {
-		err := e.dbc.InstallNftCollect(tx, nft.Tick, nft.Total, nft.Model, nft.Prompt, nft.Image, nft.HolderAddress, nft.NftTxHash)
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("deploy InstallNftCollect err: %s order_id: %s", err.Error(), nft.OrderId)
-		}
-	}
-
-	if nft.Op == "mint" {
-		if err := e.dbc.MintNft(tx, nft.Tick, nft.HolderAddress, nft.TickId, nft.Prompt, nft.Image, nft.NftTxHash, false, height); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("mint MintNft err: %s order_id: %s", err.Error(), nft.OrderId)
-		}
-	}
-
-	if nft.Op == "transfer" {
-		err = e.dbc.TransferNft(tx, nft.Tick, nft.HolderAddress, nft.ToAddress, nft.TickId, false, height)
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("transfer TransferNft err: %s order_id: %s", err.Error(), nft.OrderId)
-		}
-	}
-
-	query := "update nft_info set nft_block_hash = ?, nft_block_number = ?, order_status = 0  where nft_tx_hash = ?"
-	_, err = tx.Exec(query, nft.NftBlockHash, nft.NftBlockNumber, nft.NftTxHash)
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.NftDeploy(tx, nft)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
+	err = tx.Model(&models.NftInfo{}).Where("tx_hash = ?", nft.TxHash).Update("order_status", 0).Error
+	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("nftDeployOrMintOrTransfer commit err: %s order_id: %s", err.Error(), nft.OrderId)
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("nftDeploy commit err: %s order_id: %s", err.Error(), nft.OrderId)
+	}
+
+	return nil
+}
+
+func (e *Explorer) nftMint(nft *models.NftInfo) error {
+
+	log.Info("explorer", "p", "nft/ai", "op", "mint", "tx_hash", nft.TxHash)
+	tx := e.dbc.DB.Begin()
+
+	err := e.dbc.NftMint(tx, nft)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Model(&models.NftInfo{}).Where("tx_hash = ?", nft.TxHash).Update("order_status", 0).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("nftMint commit err: %s order_id: %s", err.Error(), nft.OrderId)
+	}
+
+	return nil
+}
+
+func (e *Explorer) nftTransfer(nft *models.NftInfo) error {
+
+	log.Info("explorer", "p", "nft/ai", "op", "transfer", "tx_hash", nft.TxHash)
+
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.NftTransfer(tx, nft)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Model(&models.NftInfo{}).Where("tx_hash = ?", nft.TxHash).Update("order_status", 0).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("nftTransfer commit err: %s order_id: %s", err.Error(), nft.OrderId)
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package router
+package router_v3
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,7 +7,7 @@ import (
 )
 
 func (r *Router) StakeAll(c *gin.Context) {
-	cards, total, err := r.dbc.FindStakeAll()
+	cards, total, err := r.mysql.FindStakeAll()
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -39,8 +39,8 @@ func (r *Router) StakeByTick(c *gin.Context) {
 		return
 	}
 
-	tx, _ := r.dbc.SqlDB.Begin()
-	nfts, err := r.dbc.FindStakeCollectByTick(tx, params.Tick)
+	tx, _ := r.mysql.MysqlDB.Begin()
+	nfts, err := r.mysql.FindStakeCollectByTick(tx, params.Tick)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -72,7 +72,7 @@ func (r *Router) StakeReward(c *gin.Context) {
 		return
 	}
 
-	staker, err := r.dbc.StakeGetRewardRouter(params.HolderAddress, params.Tick)
+	staker, err := r.mysql.StakeGetRewardRouter(params.HolderAddress, params.Tick)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -112,7 +112,7 @@ func (r *Router) StakeHolders(c *gin.Context) {
 		p.Limit = 50
 	}
 
-	stakes, total, err := r.dbc.FindStakeByAddressTick("", p.Tick, p.Limit, p.OffSet)
+	stakes, total, err := r.mysql.FindStakeByAddressTick("", p.Tick, p.Limit, p.OffSet)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -151,7 +151,7 @@ func (r *Router) StakeByAddressTick(c *gin.Context) {
 		return
 	}
 
-	nacs, total, err := r.dbc.FindStakeByAddressTick(p.HolderAddress, p.Tick, p.Limit, p.OffSet)
+	nacs, total, err := r.mysql.FindStakeByAddressTick(p.HolderAddress, p.Tick, p.Limit, p.OffSet)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -185,7 +185,7 @@ func (r *Router) StakeInfoById(c *gin.Context) {
 	result.Code = 200
 	result.Msg = "success"
 
-	stakeInfo, _, err := r.dbc.FindStakeInfo(params.OrderId, "", "", "", 1, 0)
+	stakeInfo, _, err := r.mysql.FindStakeInfo(params.OrderId, "", "", "", 1, 0)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -196,7 +196,7 @@ func (r *Router) StakeInfoById(c *gin.Context) {
 
 	if len(stakeInfo) > 0 {
 		if stakeInfo[0].Op == "getallreward" {
-			info, err := r.dbc.FindStakeRewardInfo(stakeInfo[0].OrderId)
+			info, err := r.mysql.FindStakeRewardInfo(stakeInfo[0].OrderId)
 			if err != nil {
 				return
 			}
@@ -236,7 +236,7 @@ func (r *Router) StakeInfo(c *gin.Context) {
 	result.Code = 200
 	result.Msg = "success"
 
-	stakeInfos, total, err := r.dbc.FindStakeInfo(p.OrderId, p.Op, p.Tick, p.HolderAddress, p.Limit, p.OffSet)
+	stakeInfos, total, err := r.mysql.FindStakeInfo(p.OrderId, p.Op, p.Tick, p.HolderAddress, p.Limit, p.OffSet)
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500

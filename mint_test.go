@@ -235,7 +235,7 @@ func TestMintDeploy(t *testing.T) {
 	out0 := wire.NewTxOut(baseAmount*repeat, toAddrByte)
 	redeemTx.AddTxOut(out0)
 
-	decodedAddrFee, _ := btcutil.DecodeAddress(feeAddress, &chaincfg.MainNetParams)
+	decodedAddrFee, _ := btcutil.DecodeAddress("feeAddress", &chaincfg.MainNetParams)
 	destinationAddrByteFee, err := txscript.PayToAddrScript(decodedAddrFee)
 	if err != nil {
 		log.Fatal(err)

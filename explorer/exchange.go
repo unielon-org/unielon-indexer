@@ -2,34 +2,42 @@ package explorer
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dogecoinw/doged/btcjson"
 	"github.com/dogecoinw/doged/btcutil"
 	"github.com/dogecoinw/doged/chaincfg"
 	"github.com/dogecoinw/doged/chaincfg/chainhash"
+	"github.com/dogecoinw/go-dogecoin/log"
 	"github.com/google/uuid"
+	"github.com/unielon-org/unielon-indexer/models"
 	"github.com/unielon-org/unielon-indexer/utils"
+	"gorm.io/gorm"
 )
 
-func (e *Explorer) exchangeDecode(tx *btcjson.TxRawResult, pushedData []byte, number int64) (*utils.ExchangeInfo, error) {
+func (e *Explorer) exchangeDecode(tx *btcjson.TxRawResult, pushedData []byte, number int64) (*models.ExchangeInfo, error) {
 
-	// 解析数据
-	param := &utils.ExchangeParams{}
-	err := json.Unmarshal(pushedData, param)
+	err := e.dbc.DB.Where("tx_hash = ?", tx.Hash).First(&models.ExchangeInfo{}).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("exchange already exist or err %s", tx.Hash)
+	}
+
+	inscription := &models.ExchangeInscription{}
+	err = json.Unmarshal(pushedData, inscription)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
 
-	ex, err := utils.ConvertExChange(param)
+	ex, err := utils.ConvertExChange(inscription)
 	if err != nil {
 		return nil, fmt.Errorf("exchange err: %s", err.Error())
 	}
 
 	ex.OrderId = uuid.New().String()
 	ex.FeeTxHash = tx.Vin[0].Txid
-	ex.ExchangeTxHash = tx.Hash
-	ex.ExchangeBlockHash = tx.BlockHash
-	ex.ExchangeBlockNumber = number
+	ex.TxHash = tx.Hash
+	ex.BlockHash = tx.BlockHash
+	ex.BlockNumber = number
 	ex.HolderAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 	if ex.Op == "create" {
 		ex.ExId = tx.Hash
@@ -53,50 +61,81 @@ func (e *Explorer) exchangeDecode(tx *btcjson.TxRawResult, pushedData []byte, nu
 		return nil, fmt.Errorf("The address is not the same as the previous transaction")
 	}
 
-	ex1, err := e.dbc.FindExchangeInfoByTxHash(ex.ExchangeTxHash)
+	err = e.dbc.DB.Save(ex).Error
 	if err != nil {
-		return nil, fmt.Errorf("FindExchangeInfoByTxHash err: %s", err.Error())
-	}
-
-	if ex1 != nil {
-		if ex1.ExchangeBlockNumber != 0 {
-			return nil, fmt.Errorf("ex already exist or err %s", ex.ExchangeTxHash)
-		}
-		ex.OrderId = ex1.OrderId
-		return ex, nil
-	} else {
-		if err := e.dbc.InstallExchangeInfo(ex); err != nil {
-			return nil, fmt.Errorf("InstallExchangeInfo err: %s", err.Error())
-		}
+		return nil, fmt.Errorf("Save exchange err: %s", err.Error())
 	}
 
 	return ex, nil
 }
 
-func (e *Explorer) exchangeCreate(ex *utils.ExchangeInfo) error {
-
+func (e *Explorer) exchangeCreate(ex *models.ExchangeInfo) error {
+	log.Info("explorer", "p", "exchange", "op", "create", "tx_hash", ex.TxHash)
 	reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(ex.ExId), &chaincfg.MainNetParams)
-	err := e.dbc.ExchangeCreate(ex, reservesAddress.String())
+
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.ExchangeCreate(tx, ex, reservesAddress.String())
 	if err != nil {
+		tx.Rollback()
 		return err
+	}
+
+	err = tx.Model(&models.ExchangeInfo{}).Where("tx_hash = ?", ex.TxHash).Update("order_status", 0).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("update status err: %s", err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("tx.Commit err: %s", err.Error())
 	}
 
 	return nil
 }
 
-func (e *Explorer) exchangeTrade(ex *utils.ExchangeInfo) error {
-	err := e.dbc.ExchangeTrade(ex)
+func (e *Explorer) exchangeTrade(ex *models.ExchangeInfo) error {
+
+	log.Info("explorer", "p", "exchange", "op", "trade", "tx_hash", ex.TxHash)
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.ExchangeTrade(tx, ex)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
+
+	err = tx.Model(&models.ExchangeInfo{}).Where("tx_hash = ?", ex.TxHash).Updates(map[string]interface{}{"order_status": 0, "tick0": ex.Tick0, "tick1": ex.Tick1, "amt0": ex.Amt1.String()}).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("update status err: %s", err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("tx.Commit err: %s", err.Error())
+	}
+
 	return nil
 }
 
-func (e *Explorer) exchangeCancel(ex *utils.ExchangeInfo) error {
-
-	err := e.dbc.ExchangeCancel(ex)
+func (e *Explorer) exchangeCancel(ex *models.ExchangeInfo) error {
+	log.Info("explorer", "p", "exchange", "op", "cancel", "tx_hash", ex.TxHash)
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.ExchangeCancel(tx, ex)
 	if err != nil {
+		tx.Rollback()
 		return nil
+	}
+
+	err = tx.Model(&models.ExchangeInfo{}).Where("tx_hash = ?", ex.TxHash).Updates(map[string]interface{}{"order_status": 0, "tick0": ex.Tick0, "tick1": ex.Tick1}).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("update status err: %s", err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("tx.Commit err: %s", err.Error())
 	}
 	return nil
 }

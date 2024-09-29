@@ -9,10 +9,14 @@ import (
 )
 
 type Config struct {
-	Server     utils.ServerConfig `json:"server"`
-	Sqlite     utils.SqliteConfig `json:"sqlite"`
-	Chain      utils.ChainConfig  `json:"chain"`
-	DebugLevel int                `json:"debug_level"`
+	HttpServer utils.HttpConfig     `json:"http_server"`
+	LevelDB    utils.LevelDBConfig  `json:"leveldb"`
+	Sqlite     utils.SqliteConfig   `json:"sqlite"`
+	Mysql      utils.MysqlConfig    `json:"mysql"`
+	Chain      utils.ChainConfig    `json:"chain"`
+	Explorer   utils.ExplorerConfig `json:"explorer"`
+	Ipfs       string               `json:"ipfs"`
+	DebugLevel int                  `json:"debug_level"`
 }
 
 func LoadConfig(cfg *Config, filep string) {

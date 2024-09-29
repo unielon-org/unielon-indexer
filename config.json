@@ -1,10 +1,22 @@
+
 {
-  "server": {
-    "port": ":8089",
-    "from_block": 0
+  "http_server": {
+    "switch": true,
+    "server": ":8089"
+  },
+  "leveldb": {
+    "path": "data/leveldb"
   },
   "sqlite": {
-    "database": "data/unielon-indexer.db"
+    "switch": true,
+    "database": "data/unielon.db"
+  },
+  "mysql": {
+    "server": "127.0.0.1",
+    "port": 3306,
+    "user_name": "root",
+    "pass_word": "root",
+    "database": "unielon_dev_1"
   },
   "chain": {
     "chain_name": "dogecoin",
@@ -12,5 +24,10 @@
     "user_name": "admin",
     "pass_word": "admin"
   },
-  "debug_level": 4
+  "explorer": {
+    "switch": true,
+    "from_block": 0
+  },
+  "ipfs": "",
+  "debug_level": 3
 }
