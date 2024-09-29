@@ -811,7 +811,7 @@ FROM drc20_info ci left join drc20_collect di on ci.tick = di.tick
 		if where != "where" {
 			where += " and "
 		}
-		where += "  ci.drc20_tx_hash = ? "
+		where += "  ci.tx_hash = ? "
 		whereAges = append(whereAges, hash)
 	}
 
