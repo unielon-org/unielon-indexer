@@ -3,13 +3,11 @@ package storage_v3
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/dogecoinw/go-dogecoin/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/unielon-org/unielon-indexer/models"
 	"github.com/unielon-org/unielon-indexer/utils"
 	"math/big"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -29,27 +27,25 @@ type MysqlClient struct {
 	lock    *sync.RWMutex
 }
 
-func NewMysqlClient(cfg utils.MysqlConfig) *MysqlClient {
+func NewSqliteClient(cfg utils.SqliteConfig) *MysqlClient {
 
-	dsn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s", cfg.UserName, cfg.PassWord, NETWORK, cfg.Server, cfg.Port, cfg.Database)
-	DB, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("sqlite3", cfg.Database)
 	if err != nil {
-		fmt.Printf("Open mysql failed,err:%v  ", err)
-		os.Exit(0)
+		log.Error("NewMysqlClient", "err", err)
+		return nil
 	}
 
-	err = DB.Ping()
+	_, err = db.Exec("PRAGMA journal_mode=WAL;")
+	_, err = db.Exec("PRAGMA busy_timeout=3000;")
+	_, err = db.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
 	if err != nil {
-		fmt.Printf("Ping mysql failed,err:%v  ", err)
-		os.Exit(0)
+		log.Error("NewMysqlClient", "err", err)
+		return nil
 	}
 
-	DB.SetConnMaxLifetime(100 * time.Second)
-	DB.SetMaxOpenConns(200)
-	DB.SetMaxIdleConns(64)
 	lock := new(sync.RWMutex)
 	conn := &MysqlClient{
-		MysqlDB: DB,
+		MysqlDB: db,
 		lock:    lock,
 	}
 
@@ -244,7 +240,7 @@ func (c *MysqlClient) FindCMCSummaryKNew(tick, dateInterval string) (*SwapInfoSu
 	tick0, tick1 := strings.Split(tick, "-SWAP-")[0], strings.Split(tick, "-SWAP-")[1]
 	tick0, tick1, _, _, _, _ = utils.SortTokens(tick0, tick1, nil, nil, nil, nil)
 
-	query := "select op, tick0, tick1, amt0, amt1, amt1_out, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM swap_info where update_date >= ? and op = 'swap' and block_number > 0  and block_hash != '' and ((tick0 = ? and tick1 = ?) or (tick1 = ? and tick0 = ?) )"
+	query := "select op, tick0, tick1, amt0, amt1, amt1_out,update_date, create_date  FROM swap_info where update_date >= ? and op = 'swap' and block_number > 0  and block_hash != '' and ((tick0 = ? and tick1 = ?) or (tick1 = ? and tick0 = ?) )"
 	rows, err := c.MysqlDB.Query(query, startDate.Format(layout), tick0, tick1, tick0, tick1)
 	if err != nil {
 		log.Error("QuerySwapInfoByDate", "err", err)

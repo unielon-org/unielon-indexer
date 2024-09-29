@@ -7,7 +7,7 @@ import (
 
 func (c *MysqlClient) FindBoxInfo(orderId, op, tick0, tick1, holder_address string, limit, offset int64) ([]*models.BoxInfo, int64, error) {
 
-	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM box_info  "
+	query := "SELECT  order_id, op, tick0, tick1, max_, amt0, liqamt, liqblock, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status,update_date, create_date FROM box_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -90,7 +90,7 @@ func (c *MysqlClient) FindBoxInfo(orderId, op, tick0, tick1, holder_address stri
 }
 
 func (c *MysqlClient) FindBoxCollect(tick0, tick1, holder_address string, limit, offset int64) ([]*models.BoxCollect, int64, error) {
-	query := "SELECT  tick0, tick1, max_, amt0, liqamt, liqblock, amt1, amt0_finish, liqamt_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM box_collect  "
+	query := "SELECT  tick0, tick1, max_, amt0, liqamt, liqblock, amt1, amt0_finish, liqamt_finish, holder_address, reserves_address,update_date, create_date  FROM box_collect  "
 	where := "where"
 	whereAges := []any{}
 

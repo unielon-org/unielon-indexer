@@ -7,7 +7,7 @@ import (
 )
 
 func (c *MysqlClient) FindStakeInfo(orderId, op, tick, holder_address string, limit, offset int64) ([]*models.StakeInfo, int64, error) {
-	query := "SELECT order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM stake_info  "
+	query := "SELECT order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, update_date, create_date  FROM stake_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -85,7 +85,7 @@ func (c *MysqlClient) FindStakeInfo(orderId, op, tick, holder_address string, li
 }
 
 func (c *MysqlClient) FindStakeInfoByFee(feeAddress string) (*models.StakeInfo, error) {
-	query := "SELECT order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM stake_info  where fee_address = ? and fee_tx_hash = ''"
+	query := "SELECT order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, update_date, create_date   FROM stake_info  where fee_address = ? and fee_tx_hash = ''"
 	rows, err := c.MysqlDB.Query(query, feeAddress)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (c *MysqlClient) FindStakeCollect() ([]*models.StakeCollect, error) {
 }
 
 func (c *MysqlClient) FindStakeByAddressTick(holder_address, tick string, limit, offset int64) ([]*models.StakeCollectAddress, int64, error) {
-	query := " SELECT tick, amt, reward, received_reward, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_collect_address "
+	query := " SELECT tick, amt, reward, received_reward, holder_address,update_date, create_date FROM stake_collect_address "
 
 	where := "where"
 	whereAges := []any{}
@@ -302,7 +302,7 @@ func (c *MysqlClient) FindStakeCollectAddressAll() ([]*StakeCollectAddress, erro
 }
 
 func (c *MysqlClient) FindStakeCollectAddressByTickAndHolder(tx *sql.Tx, holder_address, tick string) (*models.StakeCollectAddress, error) {
-	query := " SELECT tick, amt, reward, received_reward, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_collect_address WHERE holder_address = ? and tick = ?"
+	query := " SELECT tick, amt, reward, received_reward, holder_address,update_date, create_date FROM stake_collect_address WHERE holder_address = ? and tick = ?"
 
 	rows, err := tx.Query(query, holder_address, tick)
 	if err != nil {
@@ -329,7 +329,7 @@ func (c *MysqlClient) FindStakeCollectAddressByTickAndHolder(tx *sql.Tx, holder_
 }
 
 func (c *MysqlClient) FindStakeCollectAddressByTick(holder_address, tick string) (*models.StakeCollectAddress, error) {
-	query := " SELECT tick, amt, reward, received_reward, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM stake_collect_address WHERE holder_address = ? and tick = ?"
+	query := " SELECT tick, amt, reward, received_reward, holder_address,update_date, create_date FROM stake_collect_address WHERE holder_address = ? and tick = ?"
 
 	rows, err := c.MysqlDB.Query(query, holder_address, tick)
 	if err != nil {

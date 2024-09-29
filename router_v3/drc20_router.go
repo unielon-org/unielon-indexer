@@ -9,12 +9,13 @@ import (
 	"github.com/dogecoinw/go-dogecoin/log"
 	"github.com/gin-gonic/gin"
 	"github.com/unielon-org/unielon-indexer/models"
+	"github.com/unielon-org/unielon-indexer/storage_v3"
 	"github.com/unielon-org/unielon-indexer/utils"
 	"net/http"
 )
 
 var (
-	cacheDrc20 *models.Drc20CollectAllCache
+	cacheDrc20 *storage_v3.Drc20CollectAllCache
 )
 
 func (r *Router) FindDrc20All(c *gin.Context) {
@@ -45,7 +46,7 @@ func (r *Router) FindDrc20All(c *gin.Context) {
 	result.Data = cards
 	result.Total = total
 
-	cacheDrc20 = &models.Drc20CollectAllCache{
+	cacheDrc20 = &storage_v3.Drc20CollectAllCache{
 		Results:     cards,
 		Total:       total,
 		CacheNumber: maxHeight,

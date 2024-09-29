@@ -199,7 +199,7 @@ func (c *MysqlClient) FindSwapDrc20AddressInfoByTick(tx *sql.Tx, tick string, ad
 }
 
 func (c *MysqlClient) FindOrderByDrc20Hash(drc20Hash string) (*OrderResult, error) {
-	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint,  tx_hash, block_hash, holder_address, UNIX_TIMESTAMP(create_date), to_address FROM drc20_info where tx_hash = ?"
+	query := "SELECT order_id, p, op, tick, amt, max_, lim_, repeat_mint,  tx_hash, block_hash, holder_address, create_date, to_address FROM drc20_info where tx_hash = ?"
 	rows, err := c.MysqlDB.Query(query, drc20Hash)
 	if err != nil {
 		return nil, err
@@ -304,18 +304,18 @@ func (c *MysqlClient) FindDrc20() ([]*models.Drc20CollectAll, int64, error) {
 	return results, 0, nil
 }
 
-func (c *MysqlClient) FindDrc20All() ([]*models.Drc20CollectAll, int64, error) {
-	query := "SELECT di.tick AS ticker, di.amt_sum, di.max_, di.lim_, di.transactions, COUNT( ci.tick = di.tick ) AS Holders, UNIX_TIMESTAMP(di.create_date ) AS DeployTime, di.tx_hash, di.logo, di.introduction, di.is_check FROM drc20_collect_address AS ci RIGHT JOIN drc20_collect AS di ON ci.tick = di.tick  GROUP BY di.tick ORDER BY DeployTime DESC "
+func (c *MysqlClient) FindDrc20All() ([]*Drc20CollectAll, int64, error) {
+	query := "SELECT di.tick AS ticker, di.amt_sum, di.max_, di.lim_, di.transactions, COUNT( ci.tick = di.tick ) AS Holders, di.create_date  AS DeployTime, di.tx_hash, di.logo, di.introduction, di.is_check FROM drc20_collect_address AS ci RIGHT JOIN drc20_collect AS di ON ci.tick = di.tick  GROUP BY di.tick ORDER BY DeployTime DESC "
 	rows, err := c.MysqlDB.Query(query)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	defer rows.Close()
-	var results []*models.Drc20CollectAll
+	var results []*Drc20CollectAll
 	for rows.Next() {
 
-		result := &models.Drc20CollectAll{}
+		result := &Drc20CollectAll{}
 		var max, amt, lim string
 		err := rows.Scan(&result.Tick, &amt, &max, &lim, &result.Transactions, &result.Holders, &result.DeployTime, &result.Inscription, &result.Logo, &result.Introduction, &result.IsCheck)
 		if err != nil {
@@ -399,8 +399,8 @@ func (c *MysqlClient) FindDrc20TickAddress(address string) ([]string, error) {
 	return results, nil
 }
 
-func (c *MysqlClient) FindDrc20ByTick(tick string) (*models.Drc20CollectAll, error) {
-	query := "SELECT     di.tick AS ticker,     di.amt_sum,     di.max_ AS max_,     di.transactions AS Transactions,     UNIX_TIMESTAMP(di.update_date) AS LastMintTime,     COUNT(CASE WHEN ci.tick = di.tick THEN 1 ELSE NULL END) AS Holders,     UNIX_TIMESTAMP(di.create_date) AS DeployTime,     di.lim_ AS lim_,     di.dec_ AS dec_,     di.holder_address, di.tx_hash AS drc20_tx_hash_i0, di.logo, di.introduction, di.white_paper, di.official, di.telegram, di.discorad, di.twitter, di.facebook, di.github, di.is_check   FROM     drc20_collect_address AS ci     RIGHT JOIN drc20_collect AS di ON ci.tick = di.tick WHERE     di.tick = ? GROUP BY di.tick"
+func (c *MysqlClient) FindDrc20ByTick(tick string) (*Drc20CollectAll, error) {
+	query := "SELECT     di.tick AS ticker,     di.amt_sum,     di.max_ AS max_,     di.transactions AS Transactions,     di.update_date AS LastMintTime,     COUNT(CASE WHEN ci.tick = di.tick THEN 1 ELSE NULL END) AS Holders,     di.create_date AS DeployTime,     di.lim_ AS lim_,     di.dec_ AS dec_,     di.holder_address, di.tx_hash AS drc20_tx_hash_i0, di.logo, di.introduction, di.white_paper, di.official, di.telegram, di.discorad, di.twitter, di.facebook, di.github, di.is_check   FROM     drc20_collect_address AS ci     RIGHT JOIN drc20_collect AS di ON ci.tick = di.tick WHERE     di.tick = ? GROUP BY di.tick"
 	rows, err := c.MysqlDB.Query(query, tick)
 	if err != nil {
 		return nil, err
@@ -409,7 +409,7 @@ func (c *MysqlClient) FindDrc20ByTick(tick string) (*models.Drc20CollectAll, err
 	defer rows.Close()
 	if rows.Next() {
 
-		result := &models.Drc20CollectAll{}
+		result := &Drc20CollectAll{}
 		var max, amt, lim *string
 		err := rows.Scan(&result.Tick, &amt, &max, &result.Transactions, &result.LastMintTime, &result.Holders, &result.DeployTime, &lim, &result.Dec, &result.DeployBy, &result.Inscription, &result.Logo, &result.Introduction, &result.WhitePaper, &result.Official, &result.Telegram, &result.Discorad, &result.Twitter, &result.Facebook, &result.Github, &result.IsCheck)
 		if err != nil {
@@ -630,7 +630,7 @@ func (c *MysqlClient) FindDrc20AllByAddressTick(receive_address, tick string) (*
 }
 
 func (c *MysqlClient) FindOrders(receiveAddress, op, tick string, limit, offset int64) ([]*models.Drc20Info, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address, holder_address, fee_tx_hash, tx_hash, block_number, block_hash, repeat_mint, UNIX_TIMESTAMP(create_date), order_status, to_address  FROM drc20_info  "
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address, holder_address, fee_tx_hash, tx_hash, block_number, block_hash, repeat_mint, create_date, order_status, to_address  FROM drc20_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -714,7 +714,7 @@ func (c *MysqlClient) FindOrders(receiveAddress, op, tick string, limit, offset 
 }
 
 func (c *MysqlClient) FindOrderByAddress(receiveAddress string, limit, offset int64) ([]*models.Drc20Info, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address, holder_address, fee_tx_hash,  tx_hash, block_hash, repeat_mint, UNIX_TIMESTAMP(create_date), order_status, to_address  FROM drc20_info where holder_address = ? or to_address = ?  order by update_date desc LIMIT ? OFFSET ?"
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address, holder_address, fee_tx_hash,  tx_hash, block_hash, repeat_mint, create_date, order_status, to_address  FROM drc20_info where holder_address = ? or to_address = ?  order by update_date desc LIMIT ? OFFSET ?"
 
 	rows, err := c.MysqlDB.Query(query, receiveAddress, receiveAddress, limit, offset)
 	if err != nil {
@@ -784,7 +784,7 @@ SELECT ci.order_id,
        ci.block_hash,
        ci.block_number,
        ci.repeat_mint,
-       UNIX_TIMESTAMP(ci.create_date),
+    ci.create_date,
        ci.order_status,
        ci.to_address,
        di.tx_hash
@@ -872,7 +872,7 @@ FROM drc20_info ci left join drc20_collect di on ci.tick = di.tick
 }
 
 func (c *MysqlClient) FindOrderBytick(receiveAddress, tick string, limit, offset int64) ([]*OrderResult, int64, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,holder_address,  fee_tx_hash,  tx_hash, block_hash, repeat_mint, UNIX_TIMESTAMP(create_date), order_status, to_address  FROM drc20_info where holder_address = ? and tick = ? order by create_date desc LIMIT ? OFFSET ?;"
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,holder_address,  fee_tx_hash,  tx_hash, block_hash, repeat_mint, create_date, order_status, to_address  FROM drc20_info where holder_address = ? and tick = ? order by create_date desc LIMIT ? OFFSET ?;"
 	rows, err := c.MysqlDB.Query(query, receiveAddress, tick, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -939,7 +939,7 @@ func (c *MysqlClient) FindOrderBytick(receiveAddress, tick string, limit, offset
 }
 
 func (c *MysqlClient) FindOrderById(order_id string) (*OrderResult, error) {
-	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,holder_address,   fee_tx_hash,  tx_hash, block_hash, repeat_mint,  UNIX_TIMESTAMP(create_date), order_status, to_address  FROM drc20_info where order_id = ?"
+	query := "SELECT order_id, p, op, tick, max_, lim_, amt, fee_address,holder_address,   fee_tx_hash,  tx_hash, block_hash, repeat_mint,  create_date, order_status, to_address  FROM drc20_info where order_id = ?"
 	rows, err := c.MysqlDB.Query(query, order_id)
 	if err != nil {
 		return nil, err

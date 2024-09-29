@@ -15,7 +15,7 @@ const (
 )
 
 func (c *MysqlClient) FindSwapInfoById(OrderId string) (*models.SwapInfo, error) {
-	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM swap_info where order_id = ?"
+	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address,  update_date, create_date   FROM swap_info where order_id = ?"
 	rows, err := c.MysqlDB.Query(query, OrderId)
 	if err != nil {
 		return nil, err
@@ -184,7 +184,7 @@ func (c *MysqlClient) FindSwapInfoVolumeAll() (map[string]float64, error) {
 }
 
 func (c *MysqlClient) FindSwapInfo(orderId, op, tick, tick0, tick1, holder_address string, limit, offset int64) ([]*models.SwapInfo, int64, error) {
-	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, amt0_min, amt1_min, amt0_out, amt1_out, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM swap_info  "
+	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, amt0_min, amt1_min, amt0_out, amt1_out, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, update_date, create_date   FROM swap_info  "
 
 	where := "where"
 	whereAges := []any{}

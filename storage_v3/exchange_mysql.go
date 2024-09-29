@@ -9,7 +9,7 @@ import (
 
 func (c *MysqlClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, holder_address string, limit, offset int64) ([]*models.ExchangeInfo, int64, error) {
 
-	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_info  "
+	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, update_date, create_date   FROM exchange_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -108,7 +108,7 @@ func (c *MysqlClient) FindExchangeInfo(orderId, op, exId, tick, tick0, tick1, ho
 
 func (c *MysqlClient) FindExchangeInfoByTick(op, tick, holder_address string, limit, offset int64) ([]*models.ExchangeInfo, int64, error) {
 
-	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM exchange_info where op = ? and holder_address = ? and ( tick0 = ? or tick1 = ?) "
+	query := "SELECT  order_id, op, ex_id, tick0, tick1, amt0, amt1, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, update_date, create_date FROM exchange_info where op = ? and holder_address = ? and ( tick0 = ? or tick1 = ?) "
 	order := " order by update_date desc "
 	lim := " LIMIT ? OFFSET ? "
 
@@ -141,7 +141,7 @@ func (c *MysqlClient) FindExchangeInfoByTick(op, tick, holder_address string, li
 }
 
 func (c *MysqlClient) FindExchangeCollect(exId, tick0, tick1, holderAddress string, notDone, limit, offset int64) ([]*models.ExchangeCollect, int64, error) {
-	query := "SELECT  ex_id, tick0, tick1, amt0, amt1, amt0_finish, amt1_finish, holder_address, reserves_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)   FROM exchange_collect  "
+	query := "SELECT  ex_id, tick0, tick1, amt0, amt1, amt0_finish, amt1_finish, holder_address, reserves_address,update_date, create_date   FROM exchange_collect  "
 
 	where := "where"
 	whereAges := []any{}

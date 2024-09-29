@@ -4,6 +4,36 @@ import (
 	"math/big"
 )
 
+type Drc20CollectAll struct {
+	Tick         string   `json:"tick"`
+	MintAmt      *big.Int `json:"mint_amt"`
+	MaxAmt       *big.Int `json:"max_amt"`
+	Dec          uint8    `json:"dec"`
+	Lim          *big.Int `json:"lim"`
+	Holders      uint64   `json:"holders"`
+	Transactions uint64   `json:"transactions"`
+	DeployTime   string   `json:"deploy_time"`
+	LastMintTime string   `json:"last_mint_time"`
+	DeployBy     string   `json:"deploy_by"`
+	Inscription  string   `json:"inscription"`
+	Logo         *string  `json:"logo"`
+	Introduction *string  `json:"introduction"`
+	WhitePaper   *string  `json:"white_paper"`
+	Official     *string  `json:"official"`
+	Telegram     *string  `json:"telegram"`
+	Discorad     *string  `json:"discorad"`
+	Twitter      *string  `json:"twitter"`
+	Facebook     *string  `json:"facebook"`
+	Github       *string  `json:"github"`
+	IsCheck      uint64   `json:"is_check"`
+}
+
+type Drc20CollectAllCache struct {
+	Results     []*Drc20CollectAll
+	Total       int64
+	CacheNumber int64
+}
+
 type FindDrc20AllByAddressResult struct {
 	Tick string   `json:"tick"`
 	Amt  *big.Int `json:"amt"`
@@ -73,7 +103,7 @@ type OrderResult struct {
 	ToAddress          string   `json:"to_address"`
 	FeeAddress         string   `json:"fee_address"`
 	OrderStatus        int64    `json:"order_status"`
-	CreateDate         int64    `json:"create_date"`
+	CreateDate         string   `json:"create_date"`
 }
 
 type SwapPrice struct {

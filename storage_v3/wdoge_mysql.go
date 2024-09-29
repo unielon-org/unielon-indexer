@@ -6,7 +6,7 @@ import (
 )
 
 func (c *MysqlClient) FindWDogeInfoById(OrderId string) (*models.WDogeInfo, error) {
-	query := "SELECT  order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address,  UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) , order_status  FROM wdoge_info where order_id = ?"
+	query := "SELECT  order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, update_date, create_date , order_status  FROM wdoge_info where order_id = ?"
 	rows, err := c.MysqlDB.Query(query, OrderId)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (c *MysqlClient) FindWDogeInfoById(OrderId string) (*models.WDogeInfo, erro
 }
 
 func (c *MysqlClient) FindWDogeInfo(orderId, op, holder_address string, limit, offset int64) ([]*models.WDogeInfo, int64, error) {
-	query := "SELECT  order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, withdraw_tx_hash, withdraw_tx_index, withdraw_block_hash, withdraw_block_number, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date), order_status  FROM wdoge_info  "
+	query := "SELECT  order_id, op, tick, amt, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, withdraw_tx_hash, withdraw_tx_index, withdraw_block_hash, withdraw_block_number,update_date, create_date, order_status  FROM wdoge_info  "
 
 	where := "where"
 	whereAges := []any{}

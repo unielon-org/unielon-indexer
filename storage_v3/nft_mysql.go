@@ -15,7 +15,7 @@ func (e *MysqlClient) InstallNftRevert(tx *sql.Tx, tick, from, to string, tickId
 }
 
 func (c *MysqlClient) FindNftInfoById(OrderId string) (*models.NftInfo, error) {
-	query := "SELECT  order_id, op, tick, tick_id, total, model, prompt, image_path, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, to_address, err_info, order_status, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM nft_info where order_id = ?"
+	query := "SELECT  order_id, op, tick, tick_id, total, model, prompt, image_path, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, to_address, err_info, order_status, update_date, create_date  FROM nft_info where order_id = ?"
 	rows, err := c.MysqlDB.Query(query, OrderId)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (c *MysqlClient) FindNftInfoById(OrderId string) (*models.NftInfo, error) {
 }
 
 func (c *MysqlClient) FindNftInfo(orderId, op, holder_address string, limit, offset int64) ([]*models.NftInfo, int64, error) {
-	query := "SELECT  order_id, op, tick, tick_id, total, model, prompt, image_path, fee_tx_hash, tx_hash, block_hash, block_number, fee_address,to_address, holder_address, err_info, order_status, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date)  FROM nft_info  "
+	query := "SELECT  order_id, op, tick, tick_id, total, model, prompt, image_path, fee_tx_hash, tx_hash, block_hash, block_number, fee_address,to_address, holder_address, err_info, order_status, update_date, create_date  FROM nft_info  "
 
 	where := "where"
 	whereAges := []any{}
@@ -109,7 +109,7 @@ func (c *MysqlClient) UpdateNftInfoErr(orderId, errInfo string) error {
 }
 
 func (c *MysqlClient) FindNftCollectAllByTick(tick string) (*models.NftCollect, error) {
-	query := "SELECT tick, tick_sum, total, model, prompt, image_path, UNIX_TIMESTAMP(create_date), holder_address, deploy_hash FROM nft_collect WHERE tick = ?"
+	query := "SELECT tick, tick_sum, total, model, prompt, image_path, create_date, holder_address, deploy_hash FROM nft_collect WHERE tick = ?"
 	rows, err := c.MysqlDB.Query(query, tick)
 	if err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func (c *MysqlClient) FindNftCollectAllByTickAndId(tick string, tickId int64) (*
 }
 
 func (c *MysqlClient) FindNftHoldersByTick(tick string, limit, offset int64) ([]*models.NftCollectAddress, int64, error) {
-	query := "SELECT tick, tick_id, prompt, image_path, UNIX_TIMESTAMP(create_date), holder_address, is_check FROM nft_collect_address WHERE tick = ?  LIMIT ? OFFSET ? ;"
+	query := "SELECT tick, tick_id, prompt, image_path, create_date, holder_address, is_check FROM nft_collect_address WHERE tick = ?  LIMIT ? OFFSET ? ;"
 	rows, err := c.MysqlDB.Query(query, tick, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -255,7 +255,7 @@ func (c *MysqlClient) FindNftAll() ([]*models.NftCollect, int64, error) {
 }
 
 func (c *MysqlClient) FindNftByAddressTick(holder_address, tick string, limit, offset int64) ([]*models.NftCollectAddress, int64, error) {
-	query := " SELECT tick, tick_id, image_path, holder_address, UNIX_TIMESTAMP(update_date), UNIX_TIMESTAMP(create_date) FROM nft_collect_address "
+	query := " SELECT tick, tick_id, image_path, holder_address,update_date, create_date FROM nft_collect_address "
 
 	where := "where"
 	whereAges := []any{}

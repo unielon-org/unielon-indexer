@@ -37,7 +37,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 
-	mysqlClient := storage_v3.NewMysqlClient(cfg.Mysql)
+	mysqlClient := storage_v3.NewSqliteClient(cfg.Sqlite)
 
 	var dbClient *storage.DBClient
 	if cfg.Sqlite.Switch {
