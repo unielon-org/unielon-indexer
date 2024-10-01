@@ -444,6 +444,8 @@ func (c *MysqlClient) FindDrc20ByTick(tick string) (*Drc20CollectAll, error) {
 		}
 		result.Lim = lim_big
 
+		result.Inscription = result.Inscription + "i0"
+
 		if result.IsCheck == 0 {
 			de := ""
 			result.Logo = &de

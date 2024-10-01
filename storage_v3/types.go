@@ -95,7 +95,7 @@ type OrderResult struct {
 	FeeTxHash          string   `json:"fee_tx_hash"`
 	Drc20TxHash        string   `json:"drc20_tx_hash"`
 	BlockHash          string   `json:"block_hash"`
-	BlockNumber        string   `json:"block_number"`
+	BlockNumber        int64    `json:"block_number"`
 	BlockConfirmations uint64   `json:"block_confirmations"`
 	Drc20Inscription   string   `json:"drc20_inscription"`
 	Inscription        string   `json:"inscription"`
