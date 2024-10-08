@@ -7,6 +7,7 @@ import (
 	"github.com/unielon-org/unielon-indexer/models"
 	"github.com/unielon-org/unielon-indexer/utils"
 	"math/big"
+	"time"
 )
 
 func (e *MysqlClient) InstallDrc20Revert(tx *sql.Tx, tick, from, to string, amt *big.Int, height int64) error {
@@ -853,6 +854,16 @@ FROM drc20_info ci left join drc20_collect di on ci.tick = di.tick
 		card.Lim, _ = utils.ConvetStr(*lim)
 		card.Inscription = card.Drc20TxHash + "i0"
 		card.Drc20Inscription = card.Drc20Inscription + "i0"
+
+		tm, err := time.Parse(time.RFC3339, card.CreateDate)
+		if err != nil {
+			tm, err = time.Parse(time.RFC3339Nano, card.CreateDate)
+			if err != nil {
+				return nil, 0, err
+			}
+		}
+
+		card.CreateDate = tm.Format("2006-01-02 15:04:05")
 
 		cards = append(cards, card)
 	}
