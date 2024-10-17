@@ -35,7 +35,6 @@ func (e Explorer) fileDecode(tx *btcjson.TxRawResult, number int64) (*models.Fil
 	file.FeeTxHash = tx.Vin[0].Txid
 
 	file.TxHash = tx.Hash
-	file.FileId = tx.Hash
 	file.BlockHash = tx.BlockHash
 	file.BlockNumber = number
 	file.OrderStatus = 1
@@ -43,8 +42,9 @@ func (e Explorer) fileDecode(tx *btcjson.TxRawResult, number int64) (*models.Fil
 	file.CreateDate = models.LocalTime(time.Now().Unix())
 
 	if file.Op == "deploy" {
-		file.HolderAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 
+		file.FileId = tx.Hash
+		file.HolderAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 		if tx.Vout[0].Value != 0.001 {
 			return nil, fmt.Errorf("The amount of tokens exceeds the 0.0001")
 		}

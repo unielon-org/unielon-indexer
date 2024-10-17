@@ -136,7 +136,8 @@ func ConvertNft(inscription *models.NftInscription) (*models.NftInfo, error) {
 
 func ConvertFile(inscription *models.FileInscription) (*models.FileInfo, error) {
 	file := &models.FileInfo{
-		Op: inscription.Op,
+		Op:     inscription.Op,
+		FileId: inscription.FileId,
 	}
 
 	if inscription.Op != "transfer" {
