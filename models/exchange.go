@@ -52,6 +52,7 @@ type ExchangeRevert struct {
 	Amt0        *Number   `json:"amt0"`
 	Amt1        *Number   `json:"amt1"`
 	BlockNumber int64     `json:"block_number"`
+	TxHash      string    `json:"tx_hash"`
 	UpdateDate  LocalTime `json:"update_date"`
 	CreateDate  LocalTime `json:"create_date"`
 }

@@ -40,6 +40,7 @@ func (r *Drc20Router) Order(c *gin.Context) {
 		Op            string `json:"op"`
 		HolderAddress string `json:"holder_address"`
 		ToAddress     string `json:"to_address"`
+		Address       string `json:"address"`
 		BlockNumber   int64  `json:"block_number"`
 		Limit         int    `json:"limit"`
 		OffSet        int    `json:"offset"`
@@ -67,7 +68,15 @@ func (r *Drc20Router) Order(c *gin.Context) {
 	infos := make([]*models.Drc20Info, 0)
 	total := int64(0)
 
-	err := r.dbc.DB.Model(&models.Drc20Info{}).Where(filter).Count(&total).Limit(params.Limit).Offset(params.OffSet).Find(&infos).Error
+	subQuery := r.dbc.DB.Model(&models.Drc20Info{})
+
+	if params.Address != "" {
+		filter.HolderAddress = ""
+		filter.ToAddress = ""
+		subQuery = subQuery.Where("length(to_address) =  34 and (holder_address = ? OR to_address = ?) ", params.Address, params.Address)
+	}
+
+	err := subQuery.Where(filter).Count(&total).Order("id desc").Limit(params.Limit).Offset(params.OffSet).Find(&infos).Error
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
@@ -132,7 +141,8 @@ func (r *Drc20Router) CollectAddress(c *gin.Context) {
 
 func (r *Drc20Router) Collect(c *gin.Context) {
 	params := &struct {
-		Tick string `json:"tick"`
+		HolderAddress string `json:"holder_address"`
+		Tick          string `json:"tick"`
 	}{}
 
 	if err := c.ShouldBindJSON(&params); err != nil {
@@ -145,8 +155,7 @@ func (r *Drc20Router) Collect(c *gin.Context) {
 
 	maxHeight := 0
 	err := r.dbc.DB.Model(&models.Block{}).Select("max(block_number)").Scan(&maxHeight).Error
-
-	if params.Tick == "" {
+	if params.Tick == "" && params.HolderAddress == "" {
 		if cacheDrc20CollectAll != nil && cacheDrc20CollectAll.CacheNumber == int64(maxHeight) {
 			result := &utils.HttpResult{}
 			result.Code = 200
@@ -159,19 +168,23 @@ func (r *Drc20Router) Collect(c *gin.Context) {
 	}
 
 	results := make([]*models.Drc20CollectRouter, 0)
-	subQuery := r.dbc.DB.Table("drc20_collect_address AS ci").
+	subQuery := r.dbc.DB.Table("drc20_collect AS di").
 		Select(`di.tick, di.amt_sum as mint_amt, di.max_ as max_amt, di.lim_, di.transactions, di.holder_address as deploy_by,
-	        di.update_date AS last_mint_time, COUNT(ci.tick = di.tick) AS holders,
-			di.create_date AS deploy_time, di.tx_hash as inscription, di.logo, di.introduction, di.is_check`).
-		Joins("RIGHT JOIN drc20_collect AS di ON ci.tick = di.tick")
+	        di.update_date AS last_mint_time, (select count(*) from drc20_collect_address where tick = di.tick) AS holders,
+			di.create_date AS deploy_time, di.tx_hash as inscription, di.logo, di.introduction, di.white_paper, di.official, di.telegram, di.discorad, di.twitter, di.facebook, di.github,di.is_check`)
 
 	if params.Tick != "" {
 		subQuery = subQuery.Where("di.tick = ?", params.Tick)
 	}
 
-	err = subQuery.Group(`di.tick, di.amt_sum, di.max_, di.lim_, di.transactions, di.create_date, di.tx_hash, di.logo,
-	       di.introduction, di.is_check, di.holder_address, di.update_date`).
-		Order("deploy_time DESC").
+	if params.HolderAddress != "" {
+		subQuery = subQuery.Where("di.holder_address = ?", params.HolderAddress)
+	}
+
+	total := int64(0)
+	err = subQuery.
+		Count(&total).
+		Order("di.create_date DESC").
 		Scan(&results).Error
 
 	if err != nil {
@@ -182,31 +195,26 @@ func (r *Drc20Router) Collect(c *gin.Context) {
 		return
 	}
 
-	total := int64(0)
-	if params.Tick != "" {
-		total = int64(len(results))
-	} else {
-		r.dbc.DB.Model(&models.Drc20Collect{}).Count(&total)
-		cacheDrc20CollectAll = &models.Drc20CollectCache{
-			Results:     results,
-			Total:       total,
-			CacheNumber: int64(maxHeight),
+	if params.HolderAddress == "" {
+		for _, result := range results {
+			if result.IsCheck == 0 {
+				de := ""
+				result.Logo = &de
+				result.Introduction = &de
+				result.WhitePaper = &de
+				result.Official = &de
+				result.Telegram = &de
+				result.Discorad = &de
+				result.Twitter = &de
+				result.Facebook = &de
+				result.Github = &de
+			}
 		}
 	}
 
-	for _, result := range results {
-		if result.IsCheck == 0 {
-			de := ""
-			result.Logo = &de
-			result.Introduction = &de
-			result.WhitePaper = &de
-			result.Official = &de
-			result.Telegram = &de
-			result.Discorad = &de
-			result.Twitter = &de
-			result.Facebook = &de
-			result.Github = &de
-		}
+	cacheDrc20CollectAll = &models.Drc20CollectCache{
+		CacheNumber: int64(maxHeight),
+		Results:     results,
 	}
 
 	result := &utils.HttpResult{}

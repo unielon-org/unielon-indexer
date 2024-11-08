@@ -41,7 +41,7 @@ func (StakeCollect) TableName() string {
 	return "stake_collect"
 }
 
-type StakeV2CollectAddress struct {
+type StakeCollectAddress struct {
 	ID             uint      `gorm:"primarykey" json:"id"`
 	Tick           string    `json:"tick"`
 	Amt            *Number   `json:"amt"`
@@ -53,11 +53,11 @@ type StakeV2CollectAddress struct {
 	CreateDate     LocalTime `json:"create_date"`
 }
 
-func (StakeV2CollectAddress) TableName() string {
+func (StakeCollectAddress) TableName() string {
 	return "stake_collect_address"
 }
 
-type StakeV2CollectReward struct {
+type StakeCollectReward struct {
 	Tick       string    `json:"tick"`
 	RewardTick string    `json:"reward_tick"`
 	Reward     *Number   `json:"reward"`
@@ -65,7 +65,7 @@ type StakeV2CollectReward struct {
 	CreateDate LocalTime `json:"create_date"`
 }
 
-func (StakeV2CollectReward) TableName() string {
+func (StakeCollectReward) TableName() string {
 	return "stake_collect_reward"
 }
 
@@ -74,6 +74,7 @@ type StakeRevert struct {
 	FromAddress string  `json:"from_address"`
 	ToAddress   string  `json:"to_address"`
 	Amt         *Number `json:"amt"`
+	TxHash      string  `json:"tx_hash"`
 	BlockNumber int64   `json:"block_number"`
 }
 
@@ -102,6 +103,7 @@ type StakeRewardRevert struct {
 	FromAddress string  `json:"from_address"`
 	ToAddress   string  `json:"to_address"`
 	Amt         *Number `json:"amt"`
+	TxHash      string  `json:"tx_hash"`
 	BlockNumber int64   `json:"block_number"`
 }
 

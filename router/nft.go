@@ -30,6 +30,7 @@ func (r *NftRouter) Order(c *gin.Context) {
 		OrderId       string `json:"order_id"`
 		Op            string `json:"op"`
 		HolderAddress string `json:"holder_address"`
+		ToAddress     string `json:"to_address"`
 		BlockNumber   int64  `json:"block_number"`
 		Limit         int    `json:"limit"`
 		OffSet        int    `json:"offset"`
@@ -47,6 +48,7 @@ func (r *NftRouter) Order(c *gin.Context) {
 		OrderId:       params.OrderId,
 		Op:            params.Op,
 		HolderAddress: params.HolderAddress,
+		ToAddress:     params.ToAddress,
 		BlockNumber:   params.BlockNumber,
 	}
 

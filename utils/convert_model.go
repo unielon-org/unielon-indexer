@@ -46,6 +46,7 @@ func ConvetSwap(inscription *models.SwapInscription) (*models.SwapInfo, error) {
 		Op:    inscription.Op,
 		Tick0: strings.ToUpper(inscription.Tick0),
 		Tick1: strings.ToUpper(inscription.Tick1),
+		Doge:  inscription.Doge,
 	}
 
 	var err error
@@ -100,6 +101,25 @@ func ConvertWDoge(inscription *models.WDogeInscription) (*models.WDogeInfo, erro
 		Op:            inscription.Op,
 		Tick:          strings.ToUpper(inscription.Tick),
 		HolderAddress: inscription.HolderAddress,
+	}
+
+	var err error
+	swap.Amt, err = ConvetStringToNumber(inscription.Amt)
+	if err != nil {
+		return nil, err
+	}
+
+	return swap, nil
+}
+
+func ConvertCross(inscription *models.CrossInscription) (*models.CrossInfo, error) {
+	swap := &models.CrossInfo{
+		Op:            inscription.Op,
+		Tick:          strings.ToUpper(inscription.Tick),
+		Chain:         inscription.Chain,
+		AdminAddress:  inscription.AdminAddress,
+		HolderAddress: inscription.HolderAddress,
+		ToAddress:     inscription.ToAddress,
 	}
 
 	var err error

@@ -10,23 +10,23 @@ import (
 	"net/http"
 )
 
-type BoxRouter struct {
+type CrossRouter struct {
 	dbc  *storage.DBClient
 	node *rpcclient.Client
 
 	verify *verifys.Verifys
 }
 
-func NewBoxRouter(db *storage.DBClient, node *rpcclient.Client, verify *verifys.Verifys) *BoxRouter {
-	return &BoxRouter{
-		dbc:    db,
+func NewCrossRouter(dbc *storage.DBClient, node *rpcclient.Client, verify *verifys.Verifys) *CrossRouter {
+	return &CrossRouter{
+		dbc:    dbc,
 		node:   node,
 		verify: verify,
 	}
 }
 
-func (r *BoxRouter) Order(c *gin.Context) {
-
+// CrossOrder
+func (r *CrossRouter) Order(c *gin.Context) {
 	type params struct {
 		OrderId       string `json:"order_id"`
 		Op            string `json:"op"`
@@ -51,49 +51,36 @@ func (r *BoxRouter) Order(c *gin.Context) {
 		return
 	}
 
-	filter := &models.BoxInfo{
-		OrderId:       p.OrderId,
-		Op:            p.Op,
-		Tick0:         p.Tick0,
-		Tick1:         p.Tick1,
-		HolderAddress: p.HolderAddress,
-		BlockNumber:   p.BlockNumber,
+	filter := &models.CrossInfo{
+		OrderId: p.OrderId,
+		Op:      p.Op,
+		Tick:    p.Tick0,
 	}
 
-	infos := make([]*models.BoxInfo, 0)
+	infos := make([]*models.CrossInfo, 0)
 	total := int64(0)
-
-	err := r.dbc.DB.Model(&models.BoxInfo{}).Where(filter).Count(&total).Limit(p.Limit).Offset(p.OffSet).Find(&infos).Error
+	err := r.dbc.DB.Where(filter).Order("id desc").Count(&total).Limit(p.Limit).Offset(p.OffSet).Find(&infos).Error
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
 		result.Msg = err.Error()
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusInternalServerError, result)
 		return
 	}
 
 	result := &utils.HttpResult{}
 	result.Code = 200
-	result.Msg = "success"
 	result.Data = infos
 	result.Total = total
 	c.JSON(http.StatusOK, result)
 }
 
-func (r *BoxRouter) Collect(c *gin.Context) {
-
+func (r *CrossRouter) Collect(c *gin.Context) {
 	type params struct {
-		Tick0         string `json:"tick0"`
-		Tick1         string `json:"tick1"`
-		HolderAddress string `json:"holder_address"`
-		Limit         int    `json:"limit"`
-		OffSet        int    `json:"offset"`
+		OrderId string `json:"order_id"`
 	}
 
-	p := &params{
-		Limit:  10,
-		OffSet: 0,
-	}
+	p := &params{}
 
 	if err := c.ShouldBindJSON(&p); err != nil {
 		result := &utils.HttpResult{}
@@ -103,29 +90,21 @@ func (r *BoxRouter) Collect(c *gin.Context) {
 		return
 	}
 
-	filter := &models.BoxCollect{
-		Tick0:         p.Tick0,
-		Tick1:         p.Tick1,
-		HolderAddress: p.HolderAddress,
-		IsDel:         0,
+	info := &models.CrossInfo{
+		OrderId: p.OrderId,
 	}
 
-	excs := make([]*models.BoxCollect, 0)
-	total := int64(0)
-
-	err := r.dbc.DB.Model(&models.BoxCollect{}).Where(filter).Count(&total).Limit(p.Limit).Offset(p.OffSet).Order("update_date desc").Find(&excs).Error
+	err := r.dbc.DB.Where(info).First(info).Error
 	if err != nil {
 		result := &utils.HttpResult{}
 		result.Code = 500
 		result.Msg = err.Error()
-		c.JSON(http.StatusBadRequest, result)
+		c.JSON(http.StatusInternalServerError, result)
 		return
 	}
 
 	result := &utils.HttpResult{}
 	result.Code = 200
-	result.Msg = "success"
-	result.Data = excs
-	result.Total = total
+	result.Data = info
 	c.JSON(http.StatusOK, result)
 }

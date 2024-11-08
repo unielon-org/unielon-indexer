@@ -27,19 +27,18 @@ func (c *DBClient) NftDeploy(tx *gorm.DB, model *models.NftInfo) error {
 }
 
 func (c *DBClient) NftMint(tx *gorm.DB, model *models.NftInfo) error {
-	err := c.MintNft(tx, model.Tick, model.HolderAddress, model.Seed, model.Prompt, model.Image, model.ImagePath, model.TxHash, model.BlockNumber, false)
-	if err != nil {
-		return fmt.Errorf("NftMint err: %s order_id: %s", err.Error(), model.OrderId)
-	}
-
+	//err := c.MintNft(tx, model.Tick, model.HolderAddress, model.Seed, model.Prompt, model.Image, model.ImagePath, model.TxHash, model.BlockNumber, false)
+	//if err != nil {
+	//	return fmt.Errorf("NftMint err: %s order_id: %s", err.Error(), model.OrderId)
+	//}
 	return nil
 }
 
 func (c *DBClient) NftTransfer(tx *gorm.DB, model *models.NftInfo) error {
-	err := c.TransferNft(tx, model.Tick, model.HolderAddress, model.ToAddress, model.TickId, model.BlockNumber, false)
-	if err != nil {
-		return fmt.Errorf("NftTransfer err: %s order_id: %s", err.Error(), model.OrderId)
-	}
-
+	//err := c.TransferNft(tx, model.Tick, model.HolderAddress, model.ToAddress, model.TickId, model.BlockNumber, false)
+	//if err != nil {
+	//	return fmt.Errorf("NftTransfer err: %s order_id: %s", err.Error(), model.OrderId)
+	//}
+	//
 	return nil
 }

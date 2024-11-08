@@ -16,13 +16,16 @@ type SwapInfo struct {
 	Amt0Out       *Number   `gorm:"default:'0'" json:"amt0_out"`
 	Amt1Out       *Number   `gorm:"default:'0'" json:"amt1_out"`
 	Liquidity     *Number   `json:"liquidity"`
+	Doge          int       `json:"doge"`
 	HolderAddress string    `json:"holder_address"`
 	FeeAddress    string    `json:"fee_address"`
 	FeeTxHash     string    `json:"fee_tx_hash"`
+	FeeTxIndex    uint32    `gorm:"-" json:"fee_tx_index"`
 	TxHash        string    `json:"tx_hash"`
+	TxIndex       int       `json:"tx_index" `
 	BlockNumber   int64     `json:"block_number"`
 	BlockHash     string    `json:"block_hash"`
-	OrderStatus   int64     `json:"order_status"`
+	OrderStatus   int64     `gorm:"default:1" json:"order_status"`
 	UpdateDate    LocalTime `json:"update_date"`
 	CreateDate    LocalTime `json:"create_date"`
 }
@@ -70,17 +73,18 @@ func (SwapRevert) TableName() string {
 }
 
 type SwapSummary struct {
-	ID         uint    `gorm:"primarykey" json:"id"`
-	Tick       string  `json:"tick"`
-	Tick0      string  `json:"tick0"`
-	Tick1      string  `json:"tick1"`
-	OpenPrice  float64 `json:"open_price"`
-	ClosePrice float64 `json:"close_price"`
-	LowestAsk  float64 `json:"lowest_ask"`
-	HighestBid float64 `json:"highest_bid"`
-	BaseVolume *Number `json:"base_volume"`
-	LastDate   string  `json:"last_date"`
-	DogeUsdt   float64 `json:"doge_usdt"`
+	ID           uint    `gorm:"primarykey" json:"id"`
+	Tick         string  `json:"tick"`
+	Tick0        string  `json:"tick0"`
+	Tick1        string  `json:"tick1"`
+	OpenPrice    float64 `json:"open_price"`
+	ClosePrice   float64 `json:"close_price"`
+	LowestAsk    float64 `json:"lowest_ask"`
+	HighestBid   float64 `json:"highest_bid"`
+	BaseVolume   *Number `json:"base_volume"`
+	LastDate     string  `json:"last_date"`
+	DateInterval string  `json:"date_interval"`
+	DogeUsdt     float64 `json:"doge_usdt"`
 }
 
 func (SwapSummary) TableName() string {

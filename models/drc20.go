@@ -87,6 +87,7 @@ type Drc20Revert struct {
 	ToAddress   string    `json:"to_address"`
 	Tick        string    `json:"tick"`
 	Amt         *Number   `json:"amt"`
+	TxHash      string    `json:"tx_hash"`
 	BlockNumber int64     `json:"block_number"`
 	UpdateDate  LocalTime `json:"update_date"`
 	CreateDate  LocalTime `json:"create_date"`

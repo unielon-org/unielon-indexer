@@ -15,9 +15,13 @@ import (
 
 func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, number int64) (*models.Drc20Info, error) {
 
-	param := &models.Drc20Inscription{}
+	err := e.dbc.DB.Where("tx_hash = ?", tx.Hash).First(&models.Drc20Info{}).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("drc20 already exist or err %s", tx.Hash)
+	}
 
-	err := json.Unmarshal(pushedData, param)
+	param := &models.Drc20Inscription{}
+	err = json.Unmarshal(pushedData, param)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
@@ -25,11 +29,6 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 	card, err := utils.ConvetCard(param)
 	if err != nil {
 		return nil, fmt.Errorf("ConvetCard err: %s", err.Error())
-	}
-
-	err = e.dbc.DB.Where("tx_hash = ?", tx.Hash).First(&models.Drc20Info{}).Error
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("drc20 already exist or err %s", tx.Hash)
 	}
 
 	card.OrderId = uuid.New().String()
@@ -137,7 +136,7 @@ func (e Explorer) drc20Deploy(drc20 *models.Drc20Info) error {
 func (e *Explorer) drc20Mint(drc20 *models.Drc20Info) error {
 	tx := e.dbc.DB.Begin()
 
-	err := e.dbc.MintDrc20(tx, drc20.Tick, drc20.HolderAddress, drc20.Amt.Int(), drc20.BlockNumber, false)
+	err := e.dbc.MintDrc20(tx, drc20.Tick, drc20.HolderAddress, drc20.Amt.Int(), drc20.TxHash, drc20.BlockNumber, false)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -160,7 +159,7 @@ func (e *Explorer) drc20Mint(drc20 *models.Drc20Info) error {
 func (e *Explorer) drc20Transfer(drc20 *models.Drc20Info) error {
 
 	tx := e.dbc.DB.Begin()
-	err := e.dbc.TransferDrc20(tx, drc20.Tick, drc20.HolderAddress, drc20.ToAddress, drc20.Amt.Int(), drc20.BlockNumber, false)
+	err := e.dbc.TransferDrc20(tx, drc20.Tick, drc20.HolderAddress, drc20.ToAddress, drc20.Amt.Int(), drc20.TxHash, drc20.BlockNumber, false)
 	if err != nil {
 		tx.Rollback()
 		return err

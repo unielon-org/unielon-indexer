@@ -8,40 +8,51 @@ import (
 	"math/big"
 )
 
-func (c *DBClient) BoxDeploy(tx *gorm.DB, model *models.BoxInfo, reservesAddress string) error {
+func (c *DBClient) BoxDeploy(tx *gorm.DB, box *models.BoxInfo, reservesAddress string) error {
 
 	drc20c := &models.Drc20Collect{
-		Tick:          model.Tick0,
-		Max:           model.Max,
+		Tick:          box.Tick0,
+		Max:           box.Max,
 		Dec:           8,
-		HolderAddress: model.HolderAddress,
-		TxHash:        model.TxHash,
+		HolderAddress: box.HolderAddress,
+		TxHash:        box.TxHash,
 	}
 
 	err := tx.Create(drc20c).Error
 	if err != nil {
-		return fmt.Errorf("BoxDeploy err: %s order_id: %s", err.Error(), model.OrderId)
+		return fmt.Errorf("BoxDeploy err: %s order_id: %s", err.Error(), box.OrderId)
 	}
 
-	if err := c.MintDrc20(tx, model.Tick0, reservesAddress, model.Max.Int(), model.BlockNumber, false); err != nil {
+	if err := c.MintDrc20(tx, box.Tick0, reservesAddress, box.Max.Int(), box.TxHash, box.BlockNumber, false); err != nil {
 		return fmt.Errorf("BoxDeploy MintDrc20 err: %s", err.Error())
 	}
 
 	boxCollect := &models.BoxCollect{
-		Tick0:           model.Tick0,
-		Tick1:           model.Tick1,
-		Max:             model.Max,
-		Amt0:            model.Amt0,
-		LiqAmt:          model.LiqAmt,
-		LiqBlock:        model.LiqBlock,
-		Amt1:            model.Amt1,
-		HolderAddress:   model.HolderAddress,
+		Tick0:           box.Tick0,
+		Tick1:           box.Tick1,
+		Max:             box.Max,
+		Amt0:            box.Amt0,
+		LiqAmt:          box.LiqAmt,
+		LiqBlock:        box.LiqBlock,
+		Amt1:            box.Amt1,
+		HolderAddress:   box.HolderAddress,
 		ReservesAddress: reservesAddress,
 	}
 
 	err = tx.Create(boxCollect).Error
 	if err != nil {
-		return fmt.Errorf("BoxCollect Create err: %s order_id: %s", err.Error(), model.OrderId)
+		return fmt.Errorf("BoxCollect Create err: %s order_id: %s", err.Error(), box.OrderId)
+	}
+
+	revert := &models.BoxRevert{
+		Op:          "deploy",
+		Tick0:       box.Tick0,
+		BlockNumber: box.BlockNumber,
+	}
+
+	err = tx.Create(revert).Error
+	if err != nil {
+		return fmt.Errorf("BoxRevert Create err: %s order_id: %s", err.Error(), box.OrderId)
 	}
 
 	return nil
@@ -55,7 +66,7 @@ func (c *DBClient) BoxMint(tx *gorm.DB, box *models.BoxInfo, reservesAddress str
 		return fmt.Errorf("BoxMint FindBoxCollectByTick err: %s", err.Error())
 	}
 
-	err = c.TransferDrc20(tx, boxc.Tick1, box.HolderAddress, reservesAddress, box.Amt1.Int(), box.BlockNumber, false)
+	err = c.TransferDrc20(tx, boxc.Tick1, box.HolderAddress, reservesAddress, box.Amt1.Int(), box.TxHash, box.BlockNumber, false)
 	if err != nil {
 		return err
 	}
@@ -81,10 +92,10 @@ func (c *DBClient) BoxMint(tx *gorm.DB, box *models.BoxInfo, reservesAddress str
 		return err
 	}
 
-	ba := &models.BoxAddress{
+	ba := &models.BoxCollectAddress{
 		Tick:          boxc.Tick0,
-		HolderAddress: box.HolderAddress,
 		Amt:           box.Amt1,
+		HolderAddress: box.HolderAddress,
 		BlockNumber:   box.BlockNumber,
 	}
 
@@ -111,12 +122,13 @@ func (c *DBClient) BoxMint(tx *gorm.DB, box *models.BoxInfo, reservesAddress str
 
 func (c *DBClient) BoxFinish(tx *gorm.DB, boxc *models.BoxCollect, height int64) error {
 	swap := &models.SwapInfo{
+		Op:            "create",
 		Tick0:         boxc.Tick0,
 		Tick1:         boxc.Tick1,
-		Op:            "create",
 		Amt0:          boxc.Amt0,
 		Amt1:          boxc.LiqAmtFinish,
 		HolderAddress: boxc.ReservesAddress,
+		TxHash:        "box_finish",
 		BlockNumber:   height,
 	}
 
@@ -131,7 +143,7 @@ func (c *DBClient) BoxFinish(tx *gorm.DB, boxc *models.BoxCollect, height int64)
 	}
 
 	total := big.NewInt(0)
-	bas := []*models.BoxAddress{}
+	bas := []*models.BoxCollectAddress{}
 	err = tx.Where("tick = ?", boxc.Tick0).Find(&bas).Error
 	if err != nil {
 		return err
@@ -143,7 +155,7 @@ func (c *DBClient) BoxFinish(tx *gorm.DB, boxc *models.BoxCollect, height int64)
 
 	for _, ba := range bas {
 		amt := big.NewInt(0).Div(big.NewInt(0).Mul(ba.Amt.Int(), boxc.Amt0.Int()), total)
-		err = c.TransferDrc20(tx, boxc.Tick0, boxc.ReservesAddress, ba.HolderAddress, amt, height, false)
+		err = c.TransferDrc20(tx, boxc.Tick0, boxc.ReservesAddress, ba.HolderAddress, amt, "box_finish", height, false)
 		if err != nil {
 			return err
 		}
@@ -154,17 +166,49 @@ func (c *DBClient) BoxFinish(tx *gorm.DB, boxc *models.BoxCollect, height int64)
 		return err
 	}
 
+	revert := &models.BoxRevert{
+		Op:          "finish",
+		Tick0:       swap.Tick0,
+		Tick1:       swap.Tick1,
+		BlockNumber: height,
+	}
+
+	err = tx.Create(revert).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (c *DBClient) BoxRefund(tx *gorm.DB, boxc *models.BoxCollect, height int64) error {
 
-	err := c.BurnDrc20(tx, boxc.Tick0, boxc.ReservesAddress, boxc.Max.Int(), height, false)
+	err := c.BurnDrc20(tx, boxc.Tick0, boxc.ReservesAddress, boxc.Max.Int(), "box_refund", height, false)
 	if err != nil {
 		return err
 	}
 
-	err = tx.Delete(&models.Drc20Collect{}, "tick0 = ?", boxc.Tick0).Error
+	drc20c := &models.Drc20Collect{}
+	err = tx.Model(&models.Drc20Collect{}).Where("tick = ?", boxc.Tick0).First(drc20c).Error
+	if err != nil {
+		return err
+	}
+
+	revert := &models.BoxRevert{
+		Op:            "refund-drc20",
+		Tick0:         boxc.Tick0,
+		Max:           drc20c.Max,
+		HolderAddress: boxc.ReservesAddress,
+		TxHash:        "box_refund",
+		BlockNumber:   height,
+	}
+
+	err = tx.Create(revert).Error
+	if err != nil {
+		return err
+	}
+
+	err = tx.Delete(&models.Drc20Collect{}, "tick = ?", boxc.Tick0).Error
 	if err != nil {
 		return err
 	}
@@ -172,6 +216,19 @@ func (c *DBClient) BoxRefund(tx *gorm.DB, boxc *models.BoxCollect, height int64)
 	err = tx.Model(&models.BoxCollect{}).Where("tick0 = ?", boxc.Tick0).Update("is_del", 1).Error
 	if err != nil {
 		return err
+	}
+
+	bas := []*models.BoxCollectAddress{}
+	err = tx.Where("tick = ?", boxc.Tick0).Find(&bas).Error
+	if err != nil {
+		return err
+	}
+
+	for _, ba := range bas {
+		err = c.TransferDrc20(tx, boxc.Tick1, boxc.ReservesAddress, ba.HolderAddress, ba.Amt.Int(), "box_refund", height, false)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

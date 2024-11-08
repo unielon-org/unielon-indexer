@@ -157,13 +157,13 @@ func (r *ExchangeRouter) SummaryTotal(c *gin.Context) {
 
 	type FindSummaryResult struct {
 		Exchange int64   `json:"exchange"`
-		Value24h float64 `json:"value_all"`
+		ValueAll float64 `json:"value_all"`
 	}
 
 	sr := &FindSummaryResult{}
 
 	query := `SELECT
-				COUNT(id) AS total_records, 
+				COUNT(id) AS exchange,
 				CAST(
 					COALESCE(SUM(
 						CASE
@@ -172,7 +172,7 @@ func (r *ExchangeRouter) SummaryTotal(c *gin.Context) {
 							ELSE 0
 						END
 					), 0) AS DECIMAL(32,0)
-				) AS total_doge_amt_last
+				) AS value_all
 			FROM
 				exchange_collect;`
 
@@ -235,9 +235,9 @@ func (r *ExchangeRouter) Summary(c *gin.Context) {
 	var results []Drc20InfoResult
 	var totalCount int64
 
-	subQuery := r.dbc.DB.Table("exchange_info_summary es").
+	subQuery := r.dbc.DB.Table("exchange_summary es").
 		Select("es.tick0, es.close_price, es.lowest_ask, es.quote_volume, es.open_price").
-		Joins("INNER JOIN (SELECT tick0, MAX(id) AS max_id FROM exchange_info_summary WHERE date_interval = '1d' AND (tick0 = 'WDOGE(WRAPPED-DOGE)' OR tick1 = 'WDOGE(WRAPPED-DOGE)') GROUP BY tick0) es_max ON es.id = es_max.max_id")
+		Joins("INNER JOIN (SELECT tick0, MAX(id) AS max_id FROM exchange_summary WHERE date_interval = '1d' AND (tick0 = 'WDOGE(WRAPPED-DOGE)' OR tick1 = 'WDOGE(WRAPPED-DOGE)') GROUP BY tick0) es_max ON es.id = es_max.max_id")
 
 	mainQuery := r.dbc.DB.Table("drc20_collect d20i").
 		Select(`

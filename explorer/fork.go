@@ -86,62 +86,82 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		Find(&drc20Reverts).Error
 
 	if err != nil {
-		return fmt.Errorf("FindDrc20Revert error: %v", err)
+		return fmt.Errorf("drc20 revert error: %v", err)
 	}
 
 	for _, revert := range drc20Reverts {
 		if revert.ToAddress != "" && revert.FromAddress == "" {
-			err = e.dbc.BurnDrc20(tx, revert.Tick, revert.ToAddress, revert.Amt.Int(), height, true)
+			err = e.dbc.BurnDrc20(tx, revert.Tick, revert.ToAddress, revert.Amt.Int(), "", 0, true)
 			if err != nil {
-				return fmt.Errorf("swapFork Burn error: %v", err)
+				return fmt.Errorf("drc20 fork burn error: %v", err)
 			}
 		} else if revert.FromAddress != "" && revert.ToAddress == "" {
-			err = e.dbc.MintDrc20(tx, revert.Tick, revert.FromAddress, revert.Amt.Int(), height, true)
+			err = e.dbc.MintDrc20(tx, revert.Tick, revert.FromAddress, revert.Amt.Int(), "", 0, true)
 			if err != nil {
-				return fmt.Errorf("swapFork Mint error: %v", err)
+				return fmt.Errorf("drc20 fork mint error: %v", err)
 			}
 		} else {
-			err = e.dbc.TransferDrc20(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.Amt.Int(), height, true)
+			err = e.dbc.TransferDrc20(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.Amt.Int(), "", 0, true)
 			if err != nil {
-				return fmt.Errorf("swapFork Transfer error: %v", err)
+				return fmt.Errorf("drc20 fork transfer error: %v", err)
 			}
 		}
-	}
-
-	err = tx.Where("block_number > ?", height).Delete(&models.Drc20Revert{}).Error
-	if err != nil {
-		return fmt.Errorf("DeleteDrc20Revert error: %v", err)
 	}
 
 	// nft
-	var nftReverts []*models.NftRevert
-	err = tx.Model(&models.NftRevert{}).
+	//var nftReverts []*models.NftRevert
+	//err = tx.Model(&models.NftRevert{}).
+	//	Where("block_number > ?", height).
+	//	Order("id desc").
+	//	Find(&nftReverts).Error
+	//
+	//if err != nil {
+	//	return fmt.Errorf("FindNftRevert error: %v", err)
+	//}
+	//
+	//for _, revert := range nftReverts {
+	//	if revert.ToAddress != "" && revert.FromAddress == "" {
+	//		err = e.dbc.BurnNft(tx, revert.Tick, revert.ToAddress, revert.TickId)
+	//		if err != nil {
+	//			return fmt.Errorf("nftFork Burn error: %v", err)
+	//		}
+	//	} else {
+	//		err = e.dbc.TransferNft(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.TickId, height, true)
+	//		if err != nil {
+	//			return fmt.Errorf("nftFork Transfer error: %v", err)
+	//		}
+	//	}
+	//}
+	//
+	//err = tx.Where("block_number > ?", height).Delete(&models.NftRevert{}).Error
+	//if err != nil {
+	//	return err
+	//}
+
+	// file
+	var fileReverts []*models.FileRevert
+	err = tx.Model(&models.FileRevert{}).
 		Where("block_number > ?", height).
 		Order("id desc").
-		Find(&nftReverts).Error
+		Find(&fileReverts).Error
 
 	if err != nil {
-		return fmt.Errorf("FindNftRevert error: %v", err)
-
+		return fmt.Errorf("file revert error: %v", err)
 	}
 
-	for _, revert := range nftReverts {
+	for _, revert := range fileReverts {
 		if revert.ToAddress != "" && revert.FromAddress == "" {
-			err = e.dbc.BurnNft(tx, revert.Tick, revert.ToAddress, revert.TickId)
+			err := tx.Where("file_id = ? AND holder_address = ?", revert.FileId, revert.ToAddress).
+				Delete(&models.FileCollectAddress{}).Error
 			if err != nil {
-				return fmt.Errorf("nftFork Burn error: %v", err)
+				return fmt.Errorf("fileFork burn error: %v", err)
 			}
 		} else {
-			err = e.dbc.TransferNft(tx, revert.Tick, revert.ToAddress, revert.FromAddress, revert.TickId, height, true)
+			err = e.dbc.TransferFile(tx, revert.ToAddress, revert.FromAddress, revert.FileId, "", height, true)
 			if err != nil {
-				return fmt.Errorf("nftFork Transfer error: %v", err)
+				return fmt.Errorf("fileFork Transfer error: %v", err)
 			}
 		}
-	}
-
-	err = tx.Where("block_number > ?", height).Delete(&models.NftRevert{}).Error
-	if err != nil {
-		return err
 	}
 
 	// Exchange
@@ -152,7 +172,7 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		Find(&exchangeReverts).Error
 
 	if err != nil {
-		return fmt.Errorf("exchangeFork error: %v", err)
+		return fmt.Errorf("exchange fork error: %v", err)
 	}
 
 	for _, revert := range exchangeReverts {
@@ -164,7 +184,6 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		}
 
 		if revert.Op == "trade" {
-
 			ec := &models.ExchangeCollect{}
 			err = tx.Where("ex_id = ?", revert.ExId).First(ec).Error
 			if err != nil {
@@ -202,16 +221,9 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 
 			err = tx.Model(&models.ExchangeCollect{}).Where("ex_id = ?", revert.ExId).Update("amt0_finish", amt0_0.String()).Error
 			if err != nil {
-
 				return fmt.Errorf("update exchange_collect error: %v", err)
 			}
 		}
-	}
-
-	err = tx.Where("block_number > ?", height).Delete(&models.ExchangeRevert{}).Error
-	if err != nil {
-
-		return err
 	}
 
 	// stake
@@ -222,32 +234,23 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		Find(&stakeReverts).Error
 
 	if err != nil {
-
 		return fmt.Errorf("FindStakeRevert error: %v", err)
 	}
 
 	for _, revert := range stakeReverts {
 		if revert.FromAddress == "" && revert.ToAddress != "" {
-			err = e.dbc.StakeUnStakeV1(tx, revert.Tick, revert.ToAddress, revert.Amt.Int(), height, true)
+			err = e.dbc.StakeUnStakeV1(tx, revert.Tick, revert.ToAddress, revert.Amt.Int(), "", 0, true)
 			if err != nil {
-
-				return fmt.Errorf("swapFork Burn error: %v", err)
+				return fmt.Errorf("stakev1Fork UnStakeV1 error: %v", err)
 			}
 		}
 
-		if revert.ToAddress == "" && revert.FromAddress != "" {
-			err = e.dbc.StakeStakeV1(tx, revert.Tick, revert.FromAddress, revert.Amt.Int(), height, true)
+		if revert.FromAddress != "" && revert.ToAddress == "" {
+			err = e.dbc.StakeStakeV1(tx, revert.Tick, revert.FromAddress, revert.Amt.Int(), "", 0, true)
 			if err != nil {
-
-				return fmt.Errorf("swapFork Mint error: %v", err)
+				return fmt.Errorf("stakev1Fork StakeV1 error: %v", err)
 			}
 		}
-	}
-
-	err = tx.Where("block_number > ?", height).Delete(&models.StakeRevert{}).Error
-	if err != nil {
-
-		return fmt.Errorf("DeleteStakeRevert error: %v", err)
 	}
 
 	stakeRewardReverts := []*models.StakeRewardRevert{}
@@ -257,60 +260,16 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		Find(&stakeRewardReverts).Error
 
 	if err != nil {
-
 		return fmt.Errorf("FindStakeRewardRevert error: %v", err)
 	}
 
 	for _, revert := range stakeRewardReverts {
-
-		if revert.ToAddress == "collect" {
-			stakeCollect := &models.StakeCollect{}
-			err = tx.Model(&models.StakeCollect{}).Where("tick = ?", revert.Tick).First(stakeCollect).Error
-			if err != nil {
-
-				return fmt.Errorf("FindStakeCollect error: %v", err)
-			}
-
-			reward := big.NewInt(0).Sub(stakeCollect.Reward.Int(), revert.Amt.Int())
-
-			err = tx.Model(&models.StakeCollect{}).Where("tick = ?", revert.Tick).Update("reward", reward.String()).Error
-			if err != nil {
-
-				return fmt.Errorf("update stake_collect error: %v", err)
-			}
-
-			return nil
-		}
-
-		if revert.FromAddress != "" {
-			stakeAddressCollect := &models.StakeCollectAddress{}
-			err = tx.Where("tick = ? AND holder_address = ?", revert.Tick, revert.FromAddress).
-				First(stakeAddressCollect).Error
-
-			if err != nil {
-
-				return fmt.Errorf("FindStakeCollectAddress error: %v", err)
-			}
-
-			reward := big.NewInt(0).Sub(stakeAddressCollect.ReceivedReward.Int(), revert.Amt.Int())
-
-			err = tx.Model(&models.StakeCollectAddress{}).
-				Where("tick = ? AND holder_address = ?", revert.Tick, revert.FromAddress).
-				Update("received_reward", reward.String()).Error
-			if err != nil {
-
-				return err
-			}
-
-			return nil
-		}
 
 		stakeAddressCollect := &models.StakeCollectAddress{}
 		err = tx.Where("tick = ? AND holder_address = ?", revert.Tick, revert.ToAddress).
 			First(stakeAddressCollect).Error
 
 		if err != nil {
-
 			return fmt.Errorf("FindStakeCollectAddress error: %v", err)
 		}
 
@@ -320,58 +279,75 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 			Where("tick = ? AND holder_address = ?", revert.Tick, revert.ToAddress).
 			Update("received_reward", reward.String()).Error
 		if err != nil {
-
 			return err
 		}
 	}
 
 	// box
+
 	err = tx.Exec("update box_collect a, drc20_collect_address b set a.liqamt_finish = b.amt_sum where a.tick1 = b.tick and a.reserves_address = b.holder_address").Error
 	if err != nil {
 		return fmt.Errorf("update box_collect error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.BoxCollectAddress{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteBoxCollectAddress error: %v", err)
+	}
+
+	var boxReverts []*models.BoxRevert
+	err = tx.Model(&models.BoxRevert{}).
+		Where("block_number > ?", height).
+		Order("id desc").
+		Find(&boxReverts).Error
+
+	if err != nil {
+		return fmt.Errorf("box revert error: %v", err)
+	}
+
+	for _, revert := range boxReverts {
+		if revert.Op == "deploy" {
+
+			err = tx.Where("tick = ?", revert.Tick0).Delete(&models.Drc20Collect{}).Error
+			if err != nil {
+				return fmt.Errorf("delete drc20_collect error: %v", err)
+			}
+
+			err = tx.Where("tick0 = ?", revert.Tick0).Delete(&models.BoxCollect{}).Error
+			if err != nil {
+				return fmt.Errorf("delete box_collect error: %v", err)
+			}
+		}
+
+		if revert.Op == "finish" {
+			err = tx.Where("tick0 = ? and tick1 = ?", revert.Tick0, revert.Tick1).Delete(&models.SwapLiquidity{}).Error
+			if err != nil {
+				return fmt.Errorf("delete swap_info error: %v", err)
+			}
+		}
+
+		if revert.Op == "refund-drc20" {
+
+			drc20c := &models.Drc20Collect{
+				Tick:          revert.Tick0,
+				Max:           revert.Max,
+				Dec:           8,
+				HolderAddress: revert.HolderAddress,
+				TxHash:        revert.TxHash,
+			}
+
+			err := tx.Create(drc20c).Error
+			if err != nil {
+				return fmt.Errorf("create drc20_collect error: %v", err)
+			}
+		}
 	}
 
 	err = tx.Model(&models.BoxCollect{}).
 		Where("liqblock > ?", height).
 		Update("is_del", 0).Error
 	if err != nil {
-
 		return fmt.Errorf("update box_collect error: %v", err)
-	}
-
-	// file
-	var fileReverts []*models.FileRevert
-	err = tx.Model(&models.FileRevert{}).
-		Where("block_number > ?", height).
-		Order("id desc").
-		Find(&fileReverts).Error
-
-	if err != nil {
-
-		return fmt.Errorf("FileRevert error: %v", err)
-
-	}
-
-	for _, revert := range fileReverts {
-		if revert.ToAddress != "" && revert.FromAddress == "" {
-			err = e.dbc.BurnFile(tx, revert.ToAddress, revert.FileId)
-			if err != nil {
-
-				return fmt.Errorf("fileFork Burn error: %v", err)
-			}
-		} else {
-			err = e.dbc.TransferFile(tx, revert.ToAddress, revert.FromAddress, revert.FileId, height, true)
-			if err != nil {
-
-				return fmt.Errorf("fileFork Transfer error: %v", err)
-			}
-		}
-	}
-
-	err = tx.Where("block_number > ?", height).Delete(&models.FileRevert{}).Error
-	if err != nil {
-
-		return err
 	}
 
 	// FileExchange
@@ -427,7 +403,105 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		}
 	}
 
-	err = tx.Where("block_number > ?", height).Delete(&models.FileExchangeRevert{}).Error
+	// stake_v2
+	var stakeV2Reverts []*models.StakeV2Revert
+	err = tx.Model(&models.StakeV2Revert{}).
+		Where("block_number > ?", height).
+		Order("id desc").
+		Find(&stakeV2Reverts).Error
+	if err != nil {
+		return fmt.Errorf("FindStakeV2Revert error: %v", err)
+	}
+
+	for _, revert := range stakeV2Reverts {
+		if revert.Op == "deploy" {
+			err = tx.Where("stake_id = ?", revert.StakeId).Delete(&models.StakeV2Collect{}).Error
+			if err != nil {
+				return fmt.Errorf("StakeV2Collect error: %v", err)
+			}
+
+			err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
+			if err != nil {
+				return fmt.Errorf("Drc20Collect error: %v", err)
+			}
+		}
+
+		if revert.Op == "stake-pool" {
+			err = tx.Model(&models.StakeV2Collect{}).Where("stake_id = ?", revert.StakeId).Updates(map[string]interface{}{
+				"total_staked":         revert.Amt,
+				"acc_reward_per_share": revert.AccRewardPerShare,
+				"last_block":           revert.LastBlock,
+			}).Error
+			if err != nil {
+				return fmt.Errorf("StakeV2Collect error: %v", err)
+			}
+		}
+
+		if revert.Op == "stake-create" {
+			err = tx.Where("stake_id = ? AND holder_address = ? ", revert.StakeId, revert.HolderAddress).Delete(&models.StakeV2CollectAddress{}).Error
+			if err != nil {
+				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+			}
+		}
+
+		if revert.Op == "stake" {
+			err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
+				"amt":            revert.Amt,
+				"reward_debt":    revert.RewardDebt,
+				"pending_reward": revert.PendingReward,
+			}).Error
+			if err != nil {
+				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+			}
+		}
+
+		if revert.Op == "unstake" {
+			err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
+				"amt":            revert.Amt,
+				"reward_debt":    revert.RewardDebt,
+				"pending_reward": revert.PendingReward,
+			}).Error
+			if err != nil {
+				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+			}
+		}
+
+		if revert.Op == "getreward" {
+			err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
+				"reward_debt":    revert.RewardDebt,
+				"pending_reward": revert.PendingReward,
+			}).Error
+			if err != nil {
+				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+			}
+		}
+	}
+
+	// cross
+	var crossReverts []*models.CrossRevert
+	err = tx.Model(&models.CrossRevert{}).
+		Where("block_number > ?", height).
+		Order("id desc").
+		Find(&crossReverts).Error
+	if err != nil {
+		return fmt.Errorf("FindCrossRevert error: %v", err)
+	}
+
+	for _, revert := range crossReverts {
+		if revert.Op == "deploy" {
+			err = tx.Where("tick = ?", revert.Tick).Delete(&models.CrossCollect{}).Error
+			if err != nil {
+				return fmt.Errorf("CrossCollect error: %v", err)
+			}
+
+			err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
+			if err != nil {
+				return fmt.Errorf("Drc20Collect error: %v", err)
+			}
+		}
+	}
+
+	err = e.delRevert(tx, height)
 	if err != nil {
 		return err
 	}
@@ -477,7 +551,7 @@ func (e *Explorer) delInfo(tx *gorm.DB, height int64) error {
 		return fmt.Errorf("DeleteStakeRewardInfo error: %v", err)
 	}
 
-	err = tx.Where("block_number > ?", height).Delete(&models.BoxAddress{}).Error
+	err = tx.Where("block_number > ?", height).Delete(&models.BoxCollectAddress{}).Error
 	if err != nil {
 		return fmt.Errorf("DeleteBoxAddress error: %v", err)
 	}
@@ -492,6 +566,61 @@ func (e *Explorer) delInfo(tx *gorm.DB, height int64) error {
 		return fmt.Errorf("DeleteFileExchangeInfo error: %v", err)
 	}
 
+	err = tx.Where("block_number > ?", height).Delete(&models.StakeV2Info{}).Error
+	if err != nil {
+		return fmt.Errorf("StakeV2Info error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.CrossInfo{}).Error
+	if err != nil {
+		return fmt.Errorf("CrossInfo error: %v", err)
+	}
+
 	return nil
 
+}
+
+func (e *Explorer) delRevert(tx *gorm.DB, height int64) error {
+
+	err := tx.Where("block_number > ?", height).Delete(&models.Drc20Revert{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteDrc20Revert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.FileRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteFileRevert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.ExchangeRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteExchangeRevert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.StakeRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteStakeRevert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.StakeRewardRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteStakeRewardRevert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.FileExchangeRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("DeleteFileExchangeRevert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.StakeV2Revert{}).Error
+	if err != nil {
+		return fmt.Errorf("StakeV2Revert error: %v", err)
+	}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.CrossRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("CrossRevert error: %v", err)
+	}
+
+	return nil
 }

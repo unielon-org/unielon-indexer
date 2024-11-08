@@ -283,7 +283,7 @@ func (r *SwapRouter) SwapK(c *gin.Context) {
 
 	results := make([]*models.SwapSummary, 0)
 	total := int64(0)
-	err := r.dbc.DB.Where("tick = ? and date_interval = ?", p.Tick, p.DateInterval).
+	err := r.dbc.DB.Model(&models.SwapSummary{}).Where("tick = ? and date_interval = ?", p.Tick, p.DateInterval).
 		Count(&total).
 		Limit(p.Limit).Offset(p.Offset).
 		Find(&results).Error
@@ -450,22 +450,31 @@ func (r *SwapRouter) SwapSummary(c *gin.Context) {
 	}
 
 	type Drc20InfoResult struct {
-		Tick                  string  `json:"tick"`
-		MaxAmt                string  `grom:"max_" json:"max_amt"`
-		AmtSum                string  `grom:"amt_sum" json:"amt_sum"`
-		MarketCap             string  `gorm:"total_doge_amt" json:"market_cap"`
-		LastPrice             float64 `gorm:"close_price" json:"last_price"`
-		BaseVolume            int64   `json:"base_volume"`
-		PriceChangePercent24H float64 `gorm:"price_change" json:"price_change_percent_24h"`
-		Holders               int     `gorm:"receive_address_count" json:"holders"`
-		FootPrice             float64 `json:"foot_price"`
-		Logo                  string  `json:"logo"`
-		IsCheck               int     `json:"is_check"`
+		Tick       string  `json:"tick"`
+		MaxAmt     string  `grom:"max_amt" json:"max_amt"`
+		AmtSum     string  `grom:"amt_sum" json:"amt_sum"`
+		LastPrice  float64 `gorm:"last_price" json:"last_price"`
+		OpenPrice  float64 `gorm:"open_price" json:"open_price"`
+		BaseVolume int64   `json:"base_volume"`
+		Holders    int     `gorm:"holders" json:"holders"`
+		FootPrice  float64 `json:"foot_price"`
+		LastDate   string  `json:"last_date"`
+		Logo       string  `json:"logo"`
+		IsCheck    int     `json:"is_check"`
 	}
 
+	const layout = "2006-01-02 15:04:05"
+	startDate := time.Now()
+	startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
+
+	subQuery0 := r.dbc.DB.Table("swap_summary").
+		Select("tick, MAX(id) AS max_id").
+		Where("date_interval = '1d' ").
+		Group("tick")
+
 	subQuery := r.dbc.DB.Table("swap_summary es").
-		Select("es.tick, es.close_price, es.lowest_ask, es.base_volume, es.open_price, es.id").
-		Joins("INNER JOIN (SELECT tick, MAX(id) AS max_id FROM swap_summary WHERE date_interval = '1d' GROUP BY tick) es_max ON es.id = es_max.max_id")
+		Select("es.tick, es.close_price, es.lowest_ask, es.base_volume, es.open_price, es.id, es.last_date").
+		Joins("INNER JOIN (?) es_max ON es.id = es_max.max_id", subQuery0)
 
 	var results []Drc20InfoResult
 	var totalCount int64
@@ -473,33 +482,23 @@ func (r *SwapRouter) SwapSummary(c *gin.Context) {
 		Select(`
         d20i.tick,
         d20i.amt_sum,
-        d20i.max_,
-        COALESCE(e.close_price * d20i.amt_sum, 0) AS total_doge_amt,
-        COALESCE(e.close_price, 0) AS close_price,
-        COALESCE(e.base_volume, 0) AS base_volume,
-        COALESCE(((e.close_price - e.open_price) / e.open_price) * 100, 0) AS price_change,
-        (SELECT COUNT(holder_address) FROM drc20_collect_address WHERE drc20_collect_address.tick = e.tick) AS receive_address_count,
+        d20i.max_ as max_amt,
+		COALESCE(e.open_price, 0) AS open_price,
+        COALESCE(e.close_price, 0) AS last_price,
+        COALESCE(CASE WHEN e.last_date != ? THEN 0 ELSE e.base_volume END, 0) AS base_volume,
+        (SELECT COUNT(holder_address) FROM drc20_collect_address WHERE drc20_collect_address.tick = d20i.tick) AS holders,
         COALESCE(e.lowest_ask, 0) AS foot_price,
+		e.last_date,
         d20i.logo,
-        d20i.is_check`).
+        d20i.is_check`, startDate.Format(layout)).
 		Joins("LEFT JOIN (?) e ON e.tick = d20i.tick", subQuery).
-		Where("LENGTH(d20i.tick) < ?", 9).
-		Order("base_volume DESC, receive_address_count DESC")
+		Where("LENGTH(d20i.tick) < 9").
+		Order("base_volume DESC, holders DESC")
 
 	// Apply pagination
 	mainQuery = mainQuery.Limit(p.Limit).Offset(p.OffSet)
 
 	if p.Tick != "" {
-
-		const layout = "2006-01-02 15:04:05"
-		startDate := time.Now()
-		startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
-
-		subQuery1 := r.dbc.DB.Table("swap_summary_liquidity").
-			Select("? AS tick, SUM(liquidity) AS liquidity", p.Tick).
-			Where("(tick0 = ? OR tick1 = ?) AND  last_date = ?", p.Tick, p.Tick, startDate.Format("2006-01-02"))
-
-		mainQuery.Joins(`LEFT JOIN (?) l ON l.tick = d20i.tick`, subQuery1)
 		mainQuery = mainQuery.Where("d20i.tick = ?", p.Tick)
 	}
 

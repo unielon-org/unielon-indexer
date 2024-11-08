@@ -7,12 +7,12 @@ import (
 
 func (e *DBClient) StakeStake(tx *gorm.DB, stake *models.StakeInfo, reservesAddress string) error {
 
-	err := e.TransferDrc20(tx, stake.Tick, stake.HolderAddress, reservesAddress, stake.Amt.Int(), stake.BlockNumber, false)
+	err := e.TransferDrc20(tx, stake.Tick, stake.HolderAddress, reservesAddress, stake.Amt.Int(), stake.TxHash, stake.BlockNumber, false)
 	if err != nil {
 		return err
 	}
 
-	err = e.StakeStakeV1(tx, stake.Tick, stake.HolderAddress, stake.Amt.Int(), stake.BlockNumber, false)
+	err = e.StakeStakeV1(tx, stake.Tick, stake.HolderAddress, stake.Amt.Int(), stake.TxHash, stake.BlockNumber, false)
 	if err != nil {
 		return err
 	}
@@ -22,13 +22,13 @@ func (e *DBClient) StakeStake(tx *gorm.DB, stake *models.StakeInfo, reservesAddr
 
 func (e *DBClient) StakeUnStake(tx *gorm.DB, stake *models.StakeInfo, reservesAddress string) error {
 
-	err := e.TransferDrc20(tx, stake.Tick, reservesAddress, stake.HolderAddress, stake.Amt.Int(), stake.BlockNumber, false)
+	err := e.TransferDrc20(tx, stake.Tick, reservesAddress, stake.HolderAddress, stake.Amt.Int(), stake.TxHash, stake.BlockNumber, false)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = e.StakeUnStakeV1(tx, stake.Tick, stake.HolderAddress, stake.Amt.Int(), stake.BlockNumber, false)
+	err = e.StakeUnStakeV1(tx, stake.Tick, stake.HolderAddress, stake.Amt.Int(), stake.TxHash, stake.BlockNumber, false)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -45,7 +45,7 @@ func (e *DBClient) StakeGetReward(tx *gorm.DB, stake *models.StakeInfo) error {
 	}
 
 	for _, reward := range rewards {
-		err = e.TransferDrc20(tx, reward.Tick, stakePoolAddress, stake.HolderAddress, reward.Reward, stake.BlockNumber, false)
+		err = e.TransferDrc20(tx, reward.Tick, stakePoolAddress, stake.HolderAddress, reward.Reward, stake.TxHash, stake.BlockNumber, false)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func (e *DBClient) StakeGetReward(tx *gorm.DB, stake *models.StakeInfo) error {
 		}
 	}
 
-	err = e.StakeRewardV1(tx, stake.Tick, stake.HolderAddress, stake.BlockNumber)
+	err = e.StakeRewardV1(tx, stake.Tick, stake.HolderAddress, stake.TxHash, stake.BlockNumber)
 	if err != nil {
 		return err
 	}

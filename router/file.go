@@ -110,7 +110,7 @@ func (r *FileRouter) CollectAddress(c *gin.Context) {
 		CreateDate    models.LocalTime `gorm:"column:create_date" json:"create_date"`
 		MetaId        string           `gorm:"column:meta_id" json:"meta_id"`
 		MetaName      string           `gorm:"column:meta_name" json:"meta_name"`
-		Name          string           `gorm:"column:name" json:"name"`
+		FileName      string           `gorm:"column:file_name" json:"file_name"`
 		ExId          string           `gorm:"column:ex_id" json:"ex_id"`
 		Tick          string           `gorm:"column:tick" json:"tick"`
 		Amt           models.Number    `gorm:"column:amt" json:"amt"`
@@ -132,7 +132,7 @@ func (r *FileRouter) CollectAddress(c *gin.Context) {
 	if params.FileId != "" {
 
 		subQuery = r.dbc.DB.Table("file_collect_address").
-			Select("file_collect_address.file_id, file_collect_address.file_path,file_collect_address.file_length, file_collect_address.file_type, file_collect_address.holder_address, file_collect_address.update_date, file_collect_address.create_date, file_meta_inscription.meta_id, file_meta_inscription.name, file_meta.name as meta_name, fec.ex_id, fec.tick, fec.amt").
+			Select("file_collect_address.file_id, file_collect_address.file_path,file_collect_address.file_length, file_collect_address.file_type, file_collect_address.holder_address, file_collect_address.update_date, file_collect_address.create_date, file_meta_inscription.meta_id, file_meta_inscription.name as file_name, file_meta.name as meta_name, fec.ex_id, fec.tick, fec.amt").
 			Joins("left join file_meta_inscription on file_collect_address.file_id = file_meta_inscription.file_id").
 			Joins("left join file_meta on file_meta.meta_id = file_meta_inscription.meta_id").
 			Joins("left join (select ex_id, tick, file_id, amt from file_exchange_collect where amt != amt_finish) as fec on file_collect_address.file_id = fec.file_id")

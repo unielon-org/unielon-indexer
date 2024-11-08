@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"github.com/dogecoinw/doged/rpcclient"
 	"github.com/gin-gonic/gin"
 	shell "github.com/ipfs/go-ipfs-api"
@@ -9,6 +8,7 @@ import (
 	"github.com/unielon-org/unielon-indexer/storage"
 	"github.com/unielon-org/unielon-indexer/utils"
 	"github.com/unielon-org/unielon-indexer/verifys"
+	"gorm.io/gorm"
 	"net/http"
 	"strings"
 )
@@ -203,7 +203,7 @@ func (r *FileExchangeRouter) Collect(c *gin.Context) {
 
 	var nfts []*models.FileExchangeCollect
 	var total int64
-	err := r.dbc.DB.Where("holder_address = ?", params.Address).Limit(params.Limit).Offset(params.OffSet).Find(&nfts).Limit(-1).Offset(-1).Count(&total).Error
+	err := r.dbc.DB.Where("holder_address = ?", params.Address).Count(&total).Limit(params.Limit).Offset(params.OffSet).Find(&nfts).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -257,7 +257,7 @@ func (r *FileExchangeRouter) SummaryAll(c *gin.Context) {
 
 	subQuery1 := `SELECT COUNT(fec.ex_id) FROM (select ex_id, file_id from file_exchange_collect where amt != amt_finish) fec LEFT JOIN file_meta_inscription fmi ON fec.file_id = fmi.file_id WHERE fmi.meta_id = fm.meta_id`
 	subQuery2 := `SELECT COUNT(file_meta_inscription.file_id) FROM file_meta_inscription WHERE file_meta_inscription.meta_id = fm.meta_id`
-	subQuery3 := `SELECT COUNT(fca.holder_address) FROM file_meta_inscription left join file_collect_address fca on file_meta_inscription.file_id = fca.file_id where file_meta_inscription.meta_id = fm.meta_id`
+	subQuery3 := `SELECT COUNT(DISTINCT fca.holder_address) FROM file_meta_inscription left join file_collect_address fca on file_meta_inscription.file_id = fca.file_id where file_meta_inscription.meta_id = fm.meta_id`
 
 	subQuery := r.dbc.DB.Table("file_meta fm").
 		Select("fm.name,fm.meta_id, fm.description, fm.icon, fes.lowest_ask, fes.base_volume, fes.doge_usdt, (" + subQuery1 + ") AS total, (" + subQuery2 + ") AS count, (" + subQuery3 + ") AS holder_count, fm.is_check").
@@ -365,9 +365,10 @@ func (r *FileExchangeRouter) Inscriptions(c *gin.Context) {
 		MetaId        string              `json:"meta_id"`
 		Attributes    map[string][]string `json:"attributes"`
 		Listed        bool                `json:"listed"`
-		Tick          string              `json:"tick"`
+		Tick          []string            `json:"tick"`
 		PriceOrder    string              `json:"price_order"`
 		HolderAddress string              `json:"holder_address"`
+		FileName      string              `json:"file_name"`
 		Limit         int                 `json:"limit"`
 		OffSet        int                 `json:"offset"`
 	}{
@@ -402,53 +403,68 @@ func (r *FileExchangeRouter) Inscriptions(c *gin.Context) {
 		subQuery.Where("meta_id = ?", params.MetaId)
 	}
 
-	temp := true
-	orQuery := ""
+	if params.FileName != "" {
+		subQuery.Where("name like ?", "%"+params.FileName+"%")
+	}
+
+	recursion := func(subQuery *gorm.DB, key string, value []string) *gorm.DB {
+		query := r.dbc.DB.Table("file_meta_attribute").
+			Select("name").
+			Where("trait_type = ? and value IN (?) and name IN (?) ", key, value, subQuery).
+			Group("name")
+
+		return query
+	}
+
+	subQuery1 := r.dbc.DB.Table("file_meta_attribute").Select("name")
+
+	temp := 0
 	for key, value := range params.Attributes {
 		if len(value) == 0 {
 			continue
 		}
 
-		if temp {
-			orQuery += fmt.Sprintf(" (trait_type = '%s' AND value IN ('%s'))", key, strings.Join(value, "','"))
-			temp = false
+		if temp == 0 {
+			subQuery1 = recursion(subQuery1, key, value)
+			temp++
 			continue
 		}
 
-		orQuery += fmt.Sprintf(" OR (trait_type = '%s' AND value IN ('%s'))", key, strings.Join(value, "','"))
+		subQuery1 = recursion(subQuery1, key, value)
+		temp++
 	}
 
-	if !temp {
-		subQuery.Where(orQuery)
+	if temp > 0 {
+		subQuery.Where("name IN (?) ", subQuery1)
 	}
 
 	subQuery.Group("file_id, meta_id, name")
 
-	subQuery1 := r.dbc.DB.Table("(?) as arr", subQuery).
+	subQuery2 := r.dbc.DB.Table("(?) as arr", subQuery).
 		Select("arr.file_id, fm.name as meta_name, arr.name as file_name, fec.ex_id, fec.tick, fec.amt, fec.file_exchange_holder, fmi.file_path, fmi.holder_address as file_holder").
 		Joins("left join (select ex_id, tick, file_id, amt, holder_address as file_exchange_holder from file_exchange_collect where amt != amt_finish)  fec on arr.file_id = fec.file_id").
 		Joins("left join file_collect_address fmi on arr.file_id = fmi.file_id").
 		Joins("left join file_meta fm on arr.meta_id = fm.meta_id")
 
 	if params.Listed {
-		subQuery1 = subQuery1.Where("fec.ex_id IS NOT NULL")
+		subQuery2 = subQuery2.Where("fec.ex_id IS NOT NULL")
 	}
 
 	if params.HolderAddress != "" {
-		subQuery1 = subQuery1.Where("fmi.holder_address = ?", params.HolderAddress)
+		subQuery2 = subQuery2.Where("fmi.holder_address = ? or fec.file_exchange_holder = ?", params.HolderAddress, params.HolderAddress)
 	}
 
-	if params.Tick != "" {
-		subQuery1 = subQuery1.Where("fec.tick = ?", params.Tick)
+	if len(params.Tick) != 0 {
+		subQuery2 = subQuery2.Where("fec.tick in ?", params.Tick)
 	}
 
 	if params.PriceOrder == "asc" {
-		subQuery1 = subQuery1.Order("fec.amt ASC")
+		subQuery2 = subQuery2.Order("fec.amt ASC")
 	} else {
-		subQuery1 = subQuery1.Order("fec.amt DESC")
+		subQuery2 = subQuery2.Order("fec.amt DESC")
 	}
 
-	err := subQuery1.Count(&total).Scan(&results).Error
+	err := subQuery2.Count(&total).Limit(params.Limit).Offset(params.OffSet).Scan(&results).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())

@@ -1,11 +1,13 @@
 package storage
 
-import "math/big"
+import (
+	"math/big"
+)
 
 // SWAP
 type SwapPrice struct {
-	Tick      string  `json:"tick"`
-	LastPrice float64 `json:"last_price"`
+	Tick      string `json:"tick"`
+	LastPrice string `json:"last_price"`
 }
 
 type SwapInfoSummary struct {

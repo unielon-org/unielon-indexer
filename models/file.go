@@ -49,6 +49,7 @@ type FileRevert struct {
 	ToAddress   string    `gorm:"column:to_address" json:"to_address"`
 	FileId      string    `gorm:"column:file_id" json:"file_id"`
 	BlockNumber int64     `gorm:"column:block_number" json:"block_number"`
+	TxHash      string    `gorm:"column:tx_hash" json:"tx_hash"`
 	UpdateDate  LocalTime `gorm:"column:update_date" json:"update_date"`
 	CreateDate  LocalTime `gorm:"column:create_date" json:"create_date"`
 }

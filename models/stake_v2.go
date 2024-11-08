@@ -29,96 +29,60 @@ func (StakeV2Info) TableName() string {
 }
 
 type StakeV2Collect struct {
-	ID              uint      `gorm:"primarykey" json:"id"`
-	StakeId         string    `json:"stake_id"`
-	Tick0           string    `json:"tick0"`
-	Tick1           string    `json:"tick1"`
-	Amt             *Number   `json:"amt"`
-	Reward          *Number   `json:"reward"`
-	EachReward      *Number   `json:"each_reward"`
-	ReservesAddress string    `json:"reserves_address"`
-	UpdateDate      LocalTime `json:"update_date"`
-	CreateDate      LocalTime `json:"create_date"`
+	ID                uint      `gorm:"primarykey" json:"id"`
+	StakeId           string    `json:"stake_id"`
+	Tick0             string    `json:"tick0"`
+	Tick1             string    `json:"tick1"`
+	TotalStaked       *Number   `json:"total_staked"`
+	Reward            *Number   `json:"reward"`
+	RewardFinish      *Number   `json:"reward_finish"`
+	EachReward        *Number   `json:"each_reward"`
+	AccRewardPerShare *Number   `json:"acc_reward_per_share"`
+	LastRewardBlock   int64     `json:"last_reward_block"`
+	ReservesAddress   string    `json:"reserves_address"`
+	UpdateDate        LocalTime `json:"update_date"`
+	CreateDate        LocalTime `json:"create_date"`
 }
 
 func (StakeV2Collect) TableName() string {
 	return "stake_v2_collect"
 }
 
-type StakeCollectAddress struct {
-	ID             uint      `gorm:"primarykey" json:"id"`
-	StakeId        string    `json:"stake_id"`
-	Tick           string    `json:"tick"`
-	Amt            *Number   `json:"amt"`
-	Reward         *Number   `json:"reward"`
-	ReceivedReward *Number   `json:"received_reward"`
-	HolderAddress  string    `json:"holder_address"`
-	CardiAmt       *big.Int  `gorm:"-" json:"cardi_amt"`
-	UpdateDate     LocalTime `json:"update_date"`
-	CreateDate     LocalTime `json:"create_date"`
+type StakeV2CollectAddress struct {
+	ID            uint      `gorm:"primarykey" json:"id"`
+	StakeId       string    `json:"stake_id"`
+	Tick          string    `json:"tick"`
+	Amt           *Number   `json:"amt"`
+	RewardDebt    *Number   `json:"reward_debt"`
+	PendingReward *Number   `json:"pending_reward"`
+	HolderAddress string    `json:"holder_address"`
+	CardiAmt      *big.Int  `gorm:"-" json:"cardi_amt"`
+	UpdateDate    LocalTime `json:"update_date"`
+	CreateDate    LocalTime `json:"create_date"`
 }
 
-func (StakeCollectAddress) TableName() string {
-	return "stake_collect_address"
-}
-
-type StakeCollectReward struct {
-	Tick       string    `json:"tick"`
-	RewardTick string    `json:"reward_tick"`
-	Reward     *Number   `json:"reward"`
-	UpdateDate LocalTime `json:"update_date"`
-	CreateDate LocalTime `json:"create_date"`
-}
-
-func (StakeCollectReward) TableName() string {
-	return "stake_collect_reward"
+func (StakeV2CollectAddress) TableName() string {
+	return "stake_v2_collect_address"
 }
 
 type StakeV2Revert struct {
-	ID          uint    `gorm:"primarykey" json:"id"`
-	Op          string  `json:"op"`
-	FromAddress string  `json:"from_address"`
-	ToAddress   string  `json:"to_address"`
-	Tick        string  `json:"tick"`
-	Amt         *Number `json:"amt"`
-	BlockNumber int64   `json:"block_number"`
+	ID                uint      `gorm:"primarykey" json:"id"`
+	Op                string    `json:"op"`
+	StakeId           string    `json:"stake_id"`
+	Tick              string    `json:"tick"`
+	Amt               *Number   `json:"amt"`
+	RewardDebt        *Number   `json:"reward_debt"`
+	PendingReward     *Number   `json:"pending_reward"`
+	AccRewardPerShare *Number   `json:"acc_reward_per_share"`
+	LastRewardBlock   int64     `json:"last_reward_block"`
+	LastBlock         int64     `json:"last_block"`
+	HolderAddress     string    `json:"holder_address"`
+	ToAddress         string    `json:"to_address"`
+	BlockNumber       int64     `json:"block_number"`
+	UpdateDate        LocalTime `json:"update_date"`
+	CreateDate        LocalTime `json:"create_date"`
 }
 
 func (StakeV2Revert) TableName() string {
-	return "stake_revert"
-}
-
-type StakeV2RewardInfo struct {
-	ID          uint      `gorm:"primarykey"`
-	OrderId     string    `json:"order_id"`
-	Tick        string    `json:"tick"`
-	Amt         *Number   `json:"amt"`
-	FromAddress string    `json:"from_address"`
-	ToAddress   string    `json:"to_address"`
-	BlockNumber int64     `json:"block_number"`
-	UpdateDate  LocalTime `json:"update_date"`
-	CreateDate  LocalTime `json:"create_date"`
-}
-
-func (StakeV2RewardInfo) TableName() string {
-	return "stake_reward_info"
-}
-
-type StakeV2RewardRevert struct {
-	Tick        string  `json:"tick"`
-	FromAddress string  `json:"from_address"`
-	ToAddress   string  `json:"to_address"`
-	Amt         *Number `json:"amt"`
-	BlockNumber int64   `json:"block_number"`
-}
-
-func (StakeV2RewardRevert) TableName() string {
-	return "stake_reward_revert"
-}
-
-type HolderV2Reward struct {
-	Tick            string   `json:"tick"`
-	TotalRewardPool *big.Int `json:"total_reward_pool"`
-	Reward          *big.Int `json:"reward"`
-	ReceivedReward  *big.Int `json:"received_reward"`
+	return "stake_v2_revert"
 }

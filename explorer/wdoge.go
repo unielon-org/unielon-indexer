@@ -77,13 +77,13 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	txhash0, _ := chainhash.NewHashFromStr(tx.Vin[0].Txid)
 	txRawResult0, err := e.node.GetRawTransactionVerboseBool(txhash0)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	txhash1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
 	txRawResult1, err := e.node.GetRawTransactionVerboseBool(txhash1)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	if wdoge.HolderAddress != txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0] {
@@ -98,7 +98,7 @@ func (e Explorer) wdogeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	return wdoge, nil
 }
 
-func (e Explorer) dogeDeposit(wdoge *models.WDogeInfo) error {
+func (e Explorer) wdogeDeposit(wdoge *models.WDogeInfo) error {
 
 	tx := e.dbc.DB.Begin()
 
@@ -122,7 +122,7 @@ func (e Explorer) dogeDeposit(wdoge *models.WDogeInfo) error {
 	return nil
 }
 
-func (e Explorer) dogeWithdraw(wdoge *models.WDogeInfo) error {
+func (e Explorer) wdogeWithdraw(wdoge *models.WDogeInfo) error {
 
 	tx := e.dbc.DB.Begin()
 	err := e.dbc.DogeWithdraw(tx, wdoge)
@@ -142,5 +142,37 @@ func (e Explorer) dogeWithdraw(wdoge *models.WDogeInfo) error {
 		tx.Rollback()
 		return err
 	}
+	return nil
+}
+
+func (e Explorer) wdogeDepositSwap(dbtx *gorm.DB, wdoge *models.WDogeInfo) error {
+
+	wdoge.OrderId = uuid.New().String()
+
+	err := e.dbc.DogeDeposit(dbtx, wdoge)
+	if err != nil {
+		return err
+	}
+
+	err = dbtx.Create(wdoge).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e Explorer) wdogeWithdrawSwap(dbtx *gorm.DB, wdoge *models.WDogeInfo) error {
+
+	err := e.dbc.DogeWithdraw(dbtx, wdoge)
+	if err != nil {
+		return err
+	}
+
+	err = dbtx.Create(wdoge).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

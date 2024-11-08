@@ -42,7 +42,6 @@ func (e Explorer) fileDecode(tx *btcjson.TxRawResult, number int64) (*models.Fil
 	file.CreateDate = models.LocalTime(time.Now().Unix())
 
 	if file.Op == "deploy" {
-
 		file.FileId = tx.Hash
 		file.HolderAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
 		if tx.Vout[0].Value != 0.001 {

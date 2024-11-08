@@ -39,12 +39,10 @@ func (e *DBClient) FileExchangeCreate(tx *gorm.DB, ex *models.FileExchangeInfo, 
 		//}
 	}
 
-	//if exc.IsNft == 0 {
-	err = e.TransferFile(tx, exc.HolderAddress, exc.ReservesAddress, exc.FileId, ex.BlockNumber, false)
+	err = e.TransferFile(tx, exc.HolderAddress, exc.ReservesAddress, exc.FileId, ex.TxHash, ex.BlockNumber, false)
 	if err != nil {
 		return err
 	}
-	//}
 
 	exr := &models.FileExchangeRevert{
 		Op:          "create",
@@ -77,12 +75,12 @@ func (e *DBClient) FileExchangeTrade(tx *gorm.DB, ex *models.FileExchangeInfo) e
 		return fmt.Errorf("file_exchange_collect not found")
 	}
 
-	err = e.TransferDrc20(tx, exc.Tick, ex.HolderAddress, exc.HolderAddress, exc.Amt.Int(), ex.BlockNumber, false)
+	err = e.TransferDrc20(tx, exc.Tick, ex.HolderAddress, exc.HolderAddress, exc.Amt.Int(), ex.TxHash, ex.BlockNumber, false)
 	if err != nil {
 		return err
 	}
 
-	err = e.TransferFile(tx, exc.ReservesAddress, ex.HolderAddress, exc.FileId, ex.BlockNumber, false)
+	err = e.TransferFile(tx, exc.ReservesAddress, ex.HolderAddress, exc.FileId, ex.TxHash, ex.BlockNumber, false)
 	if err != nil {
 		return err
 	}
@@ -120,7 +118,7 @@ func (e *DBClient) FileExchangeCancel(tx *gorm.DB, ex *models.FileExchangeInfo) 
 		return fmt.Errorf("file_exchange_collect not found")
 	}
 
-	err = e.TransferFile(tx, exc.ReservesAddress, exc.HolderAddress, exc.FileId, ex.BlockNumber, false)
+	err = e.TransferFile(tx, exc.ReservesAddress, exc.HolderAddress, exc.FileId, ex.TxHash, ex.BlockNumber, false)
 	if err != nil {
 		return err
 	}

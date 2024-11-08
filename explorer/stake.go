@@ -48,13 +48,13 @@ func (e Explorer) stakeDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 	txhash0, _ := chainhash.NewHashFromStr(tx.Vin[0].Txid)
 	txRawResult0, err := e.node.GetRawTransactionVerboseBool(txhash0)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	txhash1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
 	txRawResult1, err := e.node.GetRawTransactionVerboseBool(txhash1)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	if stake.HolderAddress != txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0] {

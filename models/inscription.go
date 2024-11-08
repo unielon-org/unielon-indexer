@@ -27,6 +27,7 @@ type SwapInscription struct {
 	Amt0Min   string `json:"amt0_min"`
 	Amt1Min   string `json:"amt1_min"`
 	Liquidity string `json:"liquidity"`
+	Doge      int    `json:"doge"`
 }
 
 type WDogeInscription struct {
@@ -34,6 +35,17 @@ type WDogeInscription struct {
 	Op            string `json:"op"`
 	Tick          string `json:"tick"`
 	Amt           string `json:"amt"`
+	HolderAddress string `json:"holder_address"`
+}
+
+type CrossInscription struct {
+	P             string `json:"p"`
+	Op            string `json:"op"`
+	Chain         string `json:"chain"`
+	Tick          string `json:"tick"`
+	Amt           string `json:"amt"`
+	AdminAddress  string `json:"admin_address"`
+	ToAddress     string `json:"to_address"`
 	HolderAddress string `json:"holder_address"`
 }
 

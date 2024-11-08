@@ -38,6 +38,7 @@ func (e *Explorer) boxDecode(tx *btcjson.TxRawResult, pushedData []byte, number 
 	box.TxHash = tx.Hash
 	box.BlockHash = tx.BlockHash
 	box.BlockNumber = number
+	box.OrderStatus = 1
 
 	if len(tx.Vout) < 1 {
 		return nil, fmt.Errorf("vout length is not enough")
@@ -48,7 +49,7 @@ func (e *Explorer) boxDecode(tx *btcjson.TxRawResult, pushedData []byte, number 
 	txHashIn, _ := chainhash.NewHashFromStr(tx.Vin[0].Txid)
 	txRawResult0, err := e.node.GetRawTransactionVerboseBool(txHashIn)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	box.FeeAddress = txRawResult0.Vout[tx.Vin[0].Vout].ScriptPubKey.Addresses[0]
@@ -56,7 +57,7 @@ func (e *Explorer) boxDecode(tx *btcjson.TxRawResult, pushedData []byte, number 
 	txHashIn1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
 	txRawResult1, err := e.node.GetRawTransactionVerboseBool(txHashIn1)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	if box.HolderAddress != txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0] {

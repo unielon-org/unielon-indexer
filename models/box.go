@@ -49,7 +49,7 @@ func (BoxCollect) TableName() string {
 	return "box_collect"
 }
 
-type BoxAddress struct {
+type BoxCollectAddress struct {
 	Id            int64     `json:"id"`
 	Tick          string    `json:"tick"`
 	HolderAddress string    `json:"holder_address"`
@@ -58,6 +58,23 @@ type BoxAddress struct {
 	CreateDate    LocalTime `json:"create_date"`
 }
 
-func (BoxAddress) TableName() string {
-	return "box_address"
+func (BoxCollectAddress) TableName() string {
+	return "box_collect_address"
+}
+
+type BoxRevert struct {
+	ID            uint      `gorm:"primarykey" json:"id"`
+	Op            string    `json:"op"`
+	Tick0         string    `json:"tick0"`
+	Tick1         string    `json:"tick1"`
+	Max           *Number   `gorm:"column:max_" json:"max"`
+	HolderAddress string    `json:"holder_address"`
+	TxHash        string    `json:"tx_hash"`
+	BlockNumber   int64     `json:"block_number"`
+	UpdateDate    LocalTime `json:"update_date"`
+	CreateDate    LocalTime `json:"create_date"`
+}
+
+func (BoxRevert) TableName() string {
+	return "box_revert"
 }

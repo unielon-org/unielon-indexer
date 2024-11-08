@@ -43,7 +43,7 @@ func (e Explorer) stakeV2Decode(tx *btcjson.TxRawResult, pushedData []byte, numb
 	stake.BlockNumber = number
 	stake.OrderStatus = 1
 
-	if stake.Op == "create" {
+	if stake.Op == "deploy" {
 		stake.StakeId = tx.Txid
 	}
 
@@ -52,13 +52,13 @@ func (e Explorer) stakeV2Decode(tx *btcjson.TxRawResult, pushedData []byte, numb
 	txhash0, _ := chainhash.NewHashFromStr(tx.Vin[0].Txid)
 	txRawResult0, err := e.node.GetRawTransactionVerboseBool(txhash0)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	txhash1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
 	txRawResult1, err := e.node.GetRawTransactionVerboseBool(txhash1)
 	if err != nil {
-		return nil, chainNetworkErr
+		return nil, CHAIN_NETWORK_ERR
 	}
 
 	if stake.HolderAddress != txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0] {
@@ -73,11 +73,11 @@ func (e Explorer) stakeV2Decode(tx *btcjson.TxRawResult, pushedData []byte, numb
 	return stake, nil
 }
 
-func (e Explorer) stakeV2Create(stake *models.StakeV2Info) error {
+func (e Explorer) stakeV2Deploy(stake *models.StakeV2Info) error {
 	reservesAddress, _ := btcutil.NewAddressScriptHash([]byte(stake.StakeId+"--STAKE-V2"), &chaincfg.MainNetParams)
 
 	tx := e.dbc.DB.Begin()
-	err := e.dbc.StakeV2Create(tx, stake, reservesAddress.String())
+	err := e.dbc.StakeV2Deploy(tx, stake, reservesAddress.String())
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -98,19 +98,71 @@ func (e Explorer) stakeV2Create(stake *models.StakeV2Info) error {
 	return nil
 }
 
-func (e Explorer) stakeV2Cancel(stake *models.StakeV2Info) error {
-	return nil
-}
-
 func (e Explorer) stakeV2Stake(stake *models.StakeV2Info) error {
+
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.StakeV2Stake(tx, stake)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Model(&models.StakeV2Info{}).Where("tx_hash = ?", stake.TxHash).Update("order_status", 0).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	return nil
 }
 
 func (e Explorer) stakeV2UnStake(stake *models.StakeV2Info) error {
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.StakeV2UnStake(tx, stake)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Model(&models.StakeV2Info{}).Where("tx_hash = ?", stake.TxHash).Update("order_status", 0).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return nil
 }
 
 func (e Explorer) stakeV2GetReward(stake *models.StakeV2Info) error {
+	tx := e.dbc.DB.Begin()
+	err := e.dbc.StakeV2GetReward(tx, stake)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Model(&models.StakeV2Info{}).Where("tx_hash = ?", stake.TxHash).Update("order_status", 0).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 	return nil
 }

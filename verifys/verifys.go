@@ -119,22 +119,22 @@ func (v *Verifys) verifyTransfer(card *models.Drc20Info) error {
 	return nil
 }
 
-func (v *Verifys) VerifySwap(swap *models.SwapInfo) error {
+func (v *Verifys) VerifySwap(tx *gorm.DB, swap *models.SwapInfo) error {
 	switch swap.Op {
 	case "create":
-		return v.verifySwapCreate(swap)
+		return v.verifySwapCreate(tx, swap)
 	case "add":
-		return v.verifySwapAdd(swap)
+		return v.verifySwapAdd(tx, swap)
 	case "remove":
-		return v.verifySwapRemove(swap)
+		return v.verifySwapRemove(tx, swap)
 	case "swap":
-		return v.verifySwapExec(swap)
+		return v.verifySwapExec(tx, swap)
 	default:
 		return fmt.Errorf("do not support the type of tokens")
 	}
 }
 
-func (v *Verifys) verifySwapCreate(swap *models.SwapInfo) error {
+func (v *Verifys) verifySwapCreate(tx *gorm.DB, swap *models.SwapInfo) error {
 
 	if swap.Amt0.Int().Cmp(Number0) < 1 || swap.Amt1.Int().Cmp(Number0) < 1 {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
@@ -146,7 +146,7 @@ func (v *Verifys) verifySwapCreate(swap *models.SwapInfo) error {
 
 	tick0, tick1, amt0, amt1, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, nil, nil)
 
-	err := v.dbc.DB.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(&models.SwapLiquidity{}).Error
+	err := tx.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(&models.SwapLiquidity{}).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("the contract does not exist err %s", err.Error())
@@ -156,13 +156,13 @@ func (v *Verifys) verifySwapCreate(swap *models.SwapInfo) error {
 	}
 
 	cardA0 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", tick0, swap.HolderAddress).First(cardA0).Error
+	err = tx.Where("tick = ? and holder_address = ?", tick0, swap.HolderAddress).First(cardA0).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
 
 	cardA1 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", tick1, swap.HolderAddress).First(cardA1).Error
+	err = tx.Where("tick = ? and holder_address = ?", tick1, swap.HolderAddress).First(cardA1).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
@@ -178,7 +178,7 @@ func (v *Verifys) verifySwapCreate(swap *models.SwapInfo) error {
 	return nil
 }
 
-func (v *Verifys) verifySwapAdd(swap *models.SwapInfo) error {
+func (v *Verifys) verifySwapAdd(tx *gorm.DB, swap *models.SwapInfo) error {
 
 	tick0, tick1, amt0, amt1, amt0Min, amt1Min := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, swap.Amt0Min, swap.Amt1Min)
 
@@ -191,19 +191,19 @@ func (v *Verifys) verifySwapAdd(swap *models.SwapInfo) error {
 	}
 
 	swapLiquidity := &models.SwapLiquidity{}
-	err := v.dbc.DB.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
+	err := tx.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
 
 	cardA0 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", tick0, swap.HolderAddress).First(cardA0).Error
+	err = tx.Where("tick = ? and holder_address = ?", tick0, swap.HolderAddress).First(cardA0).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
 
 	cardA1 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", tick1, swap.HolderAddress).First(cardA1).Error
+	err = tx.Where("tick = ? and holder_address = ?", tick1, swap.HolderAddress).First(cardA1).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
@@ -250,7 +250,7 @@ func (v *Verifys) verifySwapAdd(swap *models.SwapInfo) error {
 	return nil
 }
 
-func (v *Verifys) verifySwapExec(swap *models.SwapInfo) error {
+func (v *Verifys) verifySwapExec(tx *gorm.DB, swap *models.SwapInfo) error {
 
 	if swap.Amt0.Int().Cmp(Number0) < 1 || swap.Amt1.Int().Cmp(Number0) < 1 {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
@@ -263,7 +263,7 @@ func (v *Verifys) verifySwapExec(swap *models.SwapInfo) error {
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, swap.Amt0Min, swap.Amt1Min)
 
 	swapLiquidity := &models.SwapLiquidity{}
-	err := v.dbc.DB.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
+	err := tx.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
 	if err != nil {
 		println(tick0, tick1)
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
@@ -285,13 +285,13 @@ func (v *Verifys) verifySwapExec(swap *models.SwapInfo) error {
 	}
 
 	cardA0 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", swap.Tick0, swap.HolderAddress).First(cardA0).Error
+	err = tx.Where("tick = ? and holder_address = ?", swap.Tick0, swap.HolderAddress).First(cardA0).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
 
 	cardA1 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", swap.Tick1, swapLiquidity.ReservesAddress).First(cardA1).Error
+	err = tx.Where("tick = ? and holder_address = ?", swap.Tick1, swapLiquidity.ReservesAddress).First(cardA1).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
@@ -310,7 +310,7 @@ func (v *Verifys) verifySwapExec(swap *models.SwapInfo) error {
 	return nil
 }
 
-func (v *Verifys) verifySwapRemove(swap *models.SwapInfo) error {
+func (v *Verifys) verifySwapRemove(tx *gorm.DB, swap *models.SwapInfo) error {
 
 	if swap.Liquidity.Int().Cmp(Number0) < 1 {
 		return fmt.Errorf("the amount of tokens exceeds the 0")
@@ -323,7 +323,7 @@ func (v *Verifys) verifySwapRemove(swap *models.SwapInfo) error {
 	tick0, tick1, _, _, _, _ := utils.SortTokens(swap.Tick0, swap.Tick1, swap.Amt0, swap.Amt1, swap.Amt0Min, swap.Amt1Min)
 
 	swapLiquidity := &models.SwapLiquidity{}
-	err := v.dbc.DB.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
+	err := tx.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
@@ -335,7 +335,7 @@ func (v *Verifys) verifySwapRemove(swap *models.SwapInfo) error {
 	tick := tick0 + "-SWAP-" + tick1
 
 	cardA0 := &models.Drc20CollectAddress{}
-	err = v.dbc.DB.Where("tick = ? and holder_address = ?", tick, swap.HolderAddress).First(cardA0).Error
+	err = tx.Where("tick = ? and holder_address = ?", tick, swap.HolderAddress).First(cardA0).Error
 	if err != nil {
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
@@ -562,10 +562,8 @@ func (v *Verifys) verifyStakeGetAllReward(si *models.StakeInfo) error {
 
 func (v *Verifys) VerifyStakeV2(stake *models.StakeV2Info) error {
 	switch stake.Op {
-	case "create":
-		return v.verifyStakeV2Create(stake)
-	case "cancel":
-		return v.verifyStakeV2Cancel(stake)
+	case "deploy":
+		return v.verifyStakeV2Deploy(stake)
 	case "stake":
 		return v.verifyStakeV2Stake(stake)
 	case "unstake":
@@ -577,25 +575,94 @@ func (v *Verifys) VerifyStakeV2(stake *models.StakeV2Info) error {
 	}
 }
 
-func (v *Verifys) verifyStakeV2Create(si *models.StakeV2Info) error {
-	return nil
-}
+func (v *Verifys) verifyStakeV2Deploy(si *models.StakeV2Info) error {
 
-func (v *Verifys) verifyStakeV2Cancel(si *models.StakeV2Info) error {
+	if si.Amt.Int().Cmp(Number0) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	card := &models.Drc20Collect{}
+	err := v.dbc.DB.Where("tick = ? ", si.Tick0).First(card).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	if card != nil {
+		return fmt.Errorf("the contract exist err %s", err.Error())
+	}
+
+	card = &models.Drc20Collect{}
+	err = v.dbc.DB.Where("tick = ? ", si.Tick1).First(card).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	cardA1 := &models.Drc20CollectAddress{}
+	err = v.dbc.DB.Where("tick = ? and holder_address = ?", si.Tick1, si.HolderAddress).First(cardA1).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	sum0 := cardA1.AmtSum
+
+	if si.Amt.Cmp(sum0) > 0 {
+		return fmt.Errorf("the amount of tokens exceeds the balance")
+	}
+
 	return nil
 }
 
 func (v *Verifys) verifyStakeV2Stake(si *models.StakeV2Info) error {
+
+	sc := &models.StakeV2Collect{}
+	err := v.dbc.DB.Where("stake_id = ? ", si.StakeId).First(sc).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if si.BlockNumber > sc.LastRewardBlock {
+		return fmt.Errorf("the amount of tokens exceeds the end block")
+	}
+
+	if si.Amt.Int().Cmp(Number0) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	cardA1 := &models.Drc20CollectAddress{}
+	err = v.dbc.DB.Where("tick = ? and holder_address = ?", si.Tick1, si.HolderAddress).First(cardA1).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
 
 	return nil
 }
 
 func (v *Verifys) verifyStakeV2UnStake(si *models.StakeV2Info) error {
 
+	if si.Amt.Int().Cmp(Number0) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	sca := &models.StakeV2CollectAddress{}
+	err := v.dbc.DB.Where("holder_address = ? and stake_id = ? ", si.HolderAddress, si.StakeId).First(sca).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if si.Amt.Cmp(sca.Amt) > 0 {
+		return fmt.Errorf("the amount of tokens exceeds the balance")
+	}
+
 	return nil
 }
 
 func (v *Verifys) verifyStakeV2GetReward(si *models.StakeV2Info) error {
+
+	sca := &models.StakeV2CollectAddress{}
+	err := v.dbc.DB.Where("holder_address = ? and stake_id = ? ", si.HolderAddress, si.StakeId).First(sca).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
 
 	return nil
 }
@@ -805,6 +872,83 @@ func (v *Verifys) VerifyBoxMint(box *models.BoxInfo) error {
 	liqa := big.NewInt(0).Add(boxc.LiqAmtFinish.Int(), box.Amt1.Int())
 	if boxc.LiqAmt.Int().Cmp(Number0) > 0 && liqa.Cmp(boxc.LiqAmt.Int()) > 0 {
 		return fmt.Errorf("the amount of tokens exceeds the maximum")
+	}
+
+	return nil
+}
+
+func (v *Verifys) VerifyCross(cross *models.CrossInfo) error {
+	switch cross.Op {
+	case "deploy":
+		return v.VerifyCrossDeploy(cross)
+	case "mint":
+		return v.VerifyCrossMint(cross)
+	case "burn":
+		return v.VerifyCrossBurn(cross)
+	default:
+		return fmt.Errorf("do not support the type of tokens")
+	}
+}
+
+func (v *Verifys) VerifyCrossDeploy(cross *models.CrossInfo) error {
+
+	if len(cross.Tick) < 2 || len(cross.Tick) > 8 {
+		return fmt.Errorf("the token symbol must be 2 or 8 letters")
+	}
+
+	card := &models.Drc20Collect{}
+	tick := "W" + cross.Tick + "(WRAPPED-" + cross.Tick + ")"
+	err := v.dbc.DB.Where("tick = ? ", tick).First(card).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	if card != nil {
+		return fmt.Errorf("the contract exist err %s", err.Error())
+	}
+
+	return nil
+}
+
+func (v *Verifys) VerifyCrossMint(cross *models.CrossInfo) error {
+
+	if cross.Amt.Int().Cmp(Number0) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	card := &models.Drc20Collect{}
+	err := v.dbc.DB.Where("tick = ? ", cross.Tick).First(card).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	cc := &models.CrossCollect{}
+	err = v.dbc.DB.Where("tick = ? ", cross.Tick).First(cc).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if cross.HolderAddress != cc.AdminAddress {
+		return fmt.Errorf("the administrator is not the same")
+	}
+
+	return nil
+}
+
+func (v *Verifys) VerifyCrossBurn(cross *models.CrossInfo) error {
+
+	if cross.Amt.Int().Cmp(Number0) < 1 {
+		return fmt.Errorf("the amount of tokens exceeds the 0")
+	}
+
+	cardA0 := &models.Drc20CollectAddress{}
+	err := v.dbc.DB.Where("tick = ? and holder_address = ?", cross.Tick, cross.HolderAddress).First(cardA0).Error
+	if err != nil {
+		return fmt.Errorf("the contract does not exist err %s", err.Error())
+	}
+
+	if cross.Amt.Cmp(cardA0.AmtSum) > 0 {
+		return fmt.Errorf("the amount of tokens exceeds the balance")
 	}
 
 	return nil

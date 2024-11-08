@@ -6,38 +6,38 @@ import (
 	"gorm.io/gorm"
 )
 
-func (c *DBClient) FileDeploy(tx *gorm.DB, model *models.FileInfo) error {
+func (c *DBClient) FileDeploy(tx *gorm.DB, file *models.FileInfo) error {
 
 	fileCollectAddress := &models.FileCollectAddress{
-		FileId:        model.FileId,
-		FilePath:      model.FilePath,
-		HolderAddress: model.HolderAddress,
+		FileId:        file.FileId,
+		FilePath:      file.FilePath,
+		HolderAddress: file.HolderAddress,
 	}
 
 	err := tx.Create(fileCollectAddress).Error
 	if err != nil {
-		return fmt.Errorf("deploy InstallNftCollect err: %s order_id: %s", err.Error(), model.OrderId)
+		return fmt.Errorf("deploy InstallNftCollect err: %s order_id: %s", err.Error(), file.OrderId)
 	}
 
 	revert := &models.FileRevert{
 		FromAddress: "",
-		ToAddress:   model.ToAddress,
-		FileId:      model.FileId,
-		BlockNumber: model.BlockNumber,
+		ToAddress:   file.ToAddress,
+		FileId:      file.FileId,
+		BlockNumber: file.BlockNumber,
 	}
 
 	err = tx.Create(revert).Error
 	if err != nil {
-		return fmt.Errorf("deploy InstallNftRevert err: %s order_id: %s", err.Error(), model.OrderId)
+		return fmt.Errorf("deploy InstallNftRevert err: %s order_id: %s", err.Error(), file.OrderId)
 	}
 
 	return nil
 }
 
-func (c *DBClient) FileTransfer(tx *gorm.DB, model *models.FileInfo) error {
-	err := c.TransferFile(tx, model.HolderAddress, model.ToAddress, model.FileId, model.BlockNumber, false)
+func (c *DBClient) FileTransfer(tx *gorm.DB, file *models.FileInfo) error {
+	err := c.TransferFile(tx, file.HolderAddress, file.ToAddress, file.FileId, file.TxHash, file.BlockNumber, false)
 	if err != nil {
-		return fmt.Errorf("transfer err: %s order_id: %s", err, model.OrderId)
+		return fmt.Errorf("transfer err: %s order_id: %s", err, file.OrderId)
 	}
 
 	return nil
