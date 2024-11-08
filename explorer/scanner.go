@@ -176,18 +176,18 @@ func (e *Explorer) scan() error {
 					continue
 				}
 
-			case "nft/ai":
-				nft, err := e.nftDecode(txv, e.currentHeight)
-				if err != nil {
-					log.Error("scanning", "nftDecode", err, "txhash", txv.Txid)
-					continue
-				}
-
-				err = e.executeNft(nft)
-				if err != nil {
-					e.dbc.DB.Model(&models.NftInfo{}).Where("tx_hash = ?", nft.TxHash).Update("err_info", err.Error())
-					continue
-				}
+			//case "nft/ai":
+			//	nft, err := e.nftDecode(txv, e.currentHeight)
+			//	if err != nil {
+			//		log.Error("scanning", "nftDecode", err, "txhash", txv.Txid)
+			//		continue
+			//	}
+			//
+			//	err = e.executeNft(nft)
+			//	if err != nil {
+			//		e.dbc.DB.Model(&models.NftInfo{}).Where("tx_hash = ?", nft.TxHash).Update("err_info", err.Error())
+			//		continue
+			//	}
 
 			case "file":
 				file, err := e.fileDecode(txv, e.currentHeight)
