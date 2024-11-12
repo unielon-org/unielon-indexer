@@ -215,18 +215,18 @@ func (e *Explorer) scan() error {
 					continue
 				}
 
-			case "stake-v2":
-				stake, err := e.stakeV2Decode(txv, pushedData, e.currentHeight)
-				if err != nil {
-					log.Error("scanning", "stakeDecode", err, "txhash", txv.Txid)
-					continue
-				}
-
-				err = e.executeStakeV2(stake)
-				if err != nil {
-					e.dbc.DB.Model(&models.StakeV2Info{}).Where("tx_hash = ?", stake.TxHash).Update("err_info", err.Error())
-					continue
-				}
+			//case "stake-v2":
+			//	stake, err := e.stakeV2Decode(txv, pushedData, e.currentHeight)
+			//	if err != nil {
+			//		log.Error("scanning", "stakeDecode", err, "txhash", txv.Txid)
+			//		continue
+			//	}
+			//
+			//	err = e.executeStakeV2(stake)
+			//	if err != nil {
+			//		e.dbc.DB.Model(&models.StakeV2Info{}).Where("tx_hash = ?", stake.TxHash).Update("err_info", err.Error())
+			//		continue
+			//	}
 
 			case "order-v1":
 				ex, err := e.exchangeDecode(txv, pushedData, e.currentHeight)

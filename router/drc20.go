@@ -41,6 +41,7 @@ func (r *Drc20Router) Order(c *gin.Context) {
 		HolderAddress string `json:"holder_address"`
 		ToAddress     string `json:"to_address"`
 		Address       string `json:"address"`
+		TxHash        string `json:"tx_hash"`
 		BlockNumber   int64  `json:"block_number"`
 		Limit         int    `json:"limit"`
 		OffSet        int    `json:"offset"`
@@ -62,6 +63,7 @@ func (r *Drc20Router) Order(c *gin.Context) {
 		Op:            params.Op,
 		HolderAddress: params.HolderAddress,
 		ToAddress:     params.ToAddress,
+		TxHash:        params.TxHash,
 		BlockNumber:   params.BlockNumber,
 	}
 

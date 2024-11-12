@@ -26,6 +26,7 @@ type SwapInfo struct {
 	BlockNumber   int64     `json:"block_number"`
 	BlockHash     string    `json:"block_hash"`
 	OrderStatus   int64     `gorm:"default:1" json:"order_status"`
+	ErrInfo       string    `json:"err_info"`
 	UpdateDate    LocalTime `json:"update_date"`
 	CreateDate    LocalTime `json:"create_date"`
 }

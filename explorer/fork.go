@@ -45,8 +45,8 @@ func (e *Explorer) forkBack() error {
 			if err != nil {
 				return fmt.Errorf("GetBlockHash error: %v", err)
 			}
-			localHash := ""
-			err = e.dbc.DB.Model(&models.Block{}).Where("block_number = ?", height-1).Select("block_hash").First(&localHash).Error
+
+			err = e.dbc.DB.Model(&models.Block{}).Where("block_number = ?", height).Select("block_hash").First(&localHash).Error
 			if localHash == "" {
 				return errors.New("localHash is nil")
 			}
@@ -55,6 +55,7 @@ func (e *Explorer) forkBack() error {
 		tx := e.dbc.DB.Begin()
 		err := e.fork(tx, height)
 		if err != nil {
+			log.Error("fork error", "err", err)
 			tx.Rollback()
 			return err
 		}
@@ -78,6 +79,7 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		return err
 	}
 
+	log.Info("fork", "drc20", height)
 	// drc20
 	var drc20Reverts []*models.Drc20Revert
 	err = tx.Model(&models.Drc20Revert{}).
@@ -106,6 +108,13 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 				return fmt.Errorf("drc20 fork transfer error: %v", err)
 			}
 		}
+	}
+
+	log.Info("fork", "swap", height)
+	// swap
+	err = e.UpdateLiquidity(tx)
+	if err != nil {
+		return fmt.Errorf("UpdateLiquidity error: %v", err)
 	}
 
 	// nft
@@ -138,6 +147,7 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 	//	return err
 	//}
 
+	log.Info("fork", "file", height)
 	// file
 	var fileReverts []*models.FileRevert
 	err = tx.Model(&models.FileRevert{}).
@@ -164,6 +174,7 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		}
 	}
 
+	log.Info("fork", "Exchange", height)
 	// Exchange
 	var exchangeReverts []*models.ExchangeRevert
 	err = tx.Model(&models.ExchangeRevert{}).
@@ -226,6 +237,7 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		}
 	}
 
+	log.Info("fork", "stake", height)
 	// stake
 	var stakeReverts []*models.StakeRevert
 	err = tx.Model(&models.StakeRevert{}).
@@ -283,6 +295,7 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 		}
 	}
 
+	log.Info("fork", "box", height)
 	// box
 
 	err = tx.Exec("update box_collect a, drc20_collect_address b set a.liqamt_finish = b.amt_sum where a.tick1 = b.tick and a.reserves_address = b.holder_address").Error
@@ -404,102 +417,110 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 	}
 
 	// stake_v2
-	var stakeV2Reverts []*models.StakeV2Revert
-	err = tx.Model(&models.StakeV2Revert{}).
-		Where("block_number > ?", height).
-		Order("id desc").
-		Find(&stakeV2Reverts).Error
-	if err != nil {
-		return fmt.Errorf("FindStakeV2Revert error: %v", err)
-	}
-
-	for _, revert := range stakeV2Reverts {
-		if revert.Op == "deploy" {
-			err = tx.Where("stake_id = ?", revert.StakeId).Delete(&models.StakeV2Collect{}).Error
-			if err != nil {
-				return fmt.Errorf("StakeV2Collect error: %v", err)
-			}
-
-			err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
-			if err != nil {
-				return fmt.Errorf("Drc20Collect error: %v", err)
-			}
-		}
-
-		if revert.Op == "stake-pool" {
-			err = tx.Model(&models.StakeV2Collect{}).Where("stake_id = ?", revert.StakeId).Updates(map[string]interface{}{
-				"total_staked":         revert.Amt,
-				"acc_reward_per_share": revert.AccRewardPerShare,
-				"last_block":           revert.LastBlock,
-			}).Error
-			if err != nil {
-				return fmt.Errorf("StakeV2Collect error: %v", err)
-			}
-		}
-
-		if revert.Op == "stake-create" {
-			err = tx.Where("stake_id = ? AND holder_address = ? ", revert.StakeId, revert.HolderAddress).Delete(&models.StakeV2CollectAddress{}).Error
-			if err != nil {
-				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
-			}
-		}
-
-		if revert.Op == "stake" {
-			err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
-				"amt":            revert.Amt,
-				"reward_debt":    revert.RewardDebt,
-				"pending_reward": revert.PendingReward,
-			}).Error
-			if err != nil {
-				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
-			}
-		}
-
-		if revert.Op == "unstake" {
-			err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
-				"amt":            revert.Amt,
-				"reward_debt":    revert.RewardDebt,
-				"pending_reward": revert.PendingReward,
-			}).Error
-			if err != nil {
-				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
-			}
-		}
-
-		if revert.Op == "getreward" {
-			err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
-				"reward_debt":    revert.RewardDebt,
-				"pending_reward": revert.PendingReward,
-			}).Error
-			if err != nil {
-				return fmt.Errorf("StakeV2CollectAddress error: %v", err)
-			}
-		}
-	}
+	//var stakeV2Reverts []*models.StakeV2Revert
+	//err = tx.Model(&models.StakeV2Revert{}).
+	//	Where("block_number > ?", height).
+	//	Order("id desc").
+	//	Find(&stakeV2Reverts).Error
+	//if err != nil {
+	//	return fmt.Errorf("FindStakeV2Revert error: %v", err)
+	//}
+	//
+	//for _, revert := range stakeV2Reverts {
+	//	if revert.Op == "deploy" {
+	//
+	//		err = tx.Where("stake_id = ?", revert.StakeId).Delete(&models.StakeV2Collect{}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("StakeV2Collect error: %v", err)
+	//		}
+	//
+	//
+	//		err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("Drc20Collect error: %v", err)
+	//		}
+	//	}
+	//
+	//	if revert.Op == "stake-pool" {
+	//
+	//		err = tx.Model(&models.StakeV2Collect{}).Where("stake_id = ?", revert.StakeId).Updates(map[string]interface{}{
+	//			"total_staked":         revert.Amt,
+	//			"acc_reward_per_share": revert.AccRewardPerShare,
+	//			"last_block":           revert.LastBlock,
+	//		}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("StakeV2Collect error: %v", err)
+	//		}
+	//	}
+	//
+	//	if revert.Op == "stake-create" {
+	//		err = tx.Where("stake_id = ? AND holder_address = ? ", revert.StakeId, revert.HolderAddress).Delete(&models.StakeV2CollectAddress{}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+	//		}
+	//	}
+	//
+	//	if revert.Op == "stake" {
+	//
+	//		err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
+	//			"amt":            revert.Amt,
+	//			"reward_debt":    revert.RewardDebt,
+	//			"pending_reward": revert.PendingReward,
+	//		}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+	//		}
+	//	}
+	//
+	//	if revert.Op == "unstake" {
+	//
+	//		err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
+	//			"amt":            revert.Amt,
+	//			"reward_debt":    revert.RewardDebt,
+	//			"pending_reward": revert.PendingReward,
+	//		}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+	//		}
+	//	}
+	//
+	//	if revert.Op == "getreward" {
+	//
+	//		err = tx.Model(&models.StakeV2CollectAddress{}).Where("stake_id = ? AND holder_address = ?", revert.StakeId, revert.HolderAddress).Updates(map[string]interface{}{
+	//			"reward_debt":    revert.RewardDebt,
+	//			"pending_reward": revert.PendingReward,
+	//		}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("StakeV2CollectAddress error: %v", err)
+	//		}
+	//	}
+	//}
 
 	// cross
-	var crossReverts []*models.CrossRevert
-	err = tx.Model(&models.CrossRevert{}).
-		Where("block_number > ?", height).
-		Order("id desc").
-		Find(&crossReverts).Error
-	if err != nil {
-		return fmt.Errorf("FindCrossRevert error: %v", err)
-	}
-
-	for _, revert := range crossReverts {
-		if revert.Op == "deploy" {
-			err = tx.Where("tick = ?", revert.Tick).Delete(&models.CrossCollect{}).Error
-			if err != nil {
-				return fmt.Errorf("CrossCollect error: %v", err)
-			}
-
-			err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
-			if err != nil {
-				return fmt.Errorf("Drc20Collect error: %v", err)
-			}
-		}
-	}
+	//var crossReverts []*models.CrossRevert
+	//err = tx.Model(&models.CrossRevert{}).
+	//	Where("block_number > ?", height).
+	//	Order("id desc").
+	//	Find(&crossReverts).Error
+	//if err != nil {
+	//	return fmt.Errorf("FindCrossRevert error: %v", err)
+	//}
+	//
+	//for _, revert := range crossReverts {
+	//	if revert.Op == "deploy" {
+	//
+	//		err = tx.Where("tick = ?", revert.Tick).Delete(&models.CrossCollect{}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("CrossCollect error: %v", err)
+	//		}
+	//
+	//
+	//		err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
+	//		if err != nil {
+	//			return fmt.Errorf("Drc20Collect error: %v", err)
+	//		}
+	//	}
+	//}
 
 	err = e.delRevert(tx, height)
 	if err != nil {
@@ -511,6 +532,9 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 }
 
 func (e *Explorer) delInfo(tx *gorm.DB, height int64) error {
+
+	log.Info("delInfo", "height", height)
+
 	err := tx.Where("block_number > ?", height).Delete(&models.Drc20Info{}).Error
 	if err != nil {
 		return fmt.Errorf("DeleteDrc20Info error: %v", err)
@@ -566,15 +590,15 @@ func (e *Explorer) delInfo(tx *gorm.DB, height int64) error {
 		return fmt.Errorf("DeleteFileExchangeInfo error: %v", err)
 	}
 
-	err = tx.Where("block_number > ?", height).Delete(&models.StakeV2Info{}).Error
-	if err != nil {
-		return fmt.Errorf("StakeV2Info error: %v", err)
-	}
-
-	err = tx.Where("block_number > ?", height).Delete(&models.CrossInfo{}).Error
-	if err != nil {
-		return fmt.Errorf("CrossInfo error: %v", err)
-	}
+	//err = tx.Where("block_number > ?", height).Delete(&models.StakeV2Info{}).Error
+	//if err != nil {
+	//	return fmt.Errorf("StakeV2Info error: %v", err)
+	//}
+	//
+	//err = tx.Where("block_number > ?", height).Delete(&models.CrossInfo{}).Error
+	//if err != nil {
+	//	return fmt.Errorf("CrossInfo error: %v", err)
+	//}
 
 	return nil
 
@@ -612,14 +636,67 @@ func (e *Explorer) delRevert(tx *gorm.DB, height int64) error {
 		return fmt.Errorf("DeleteFileExchangeRevert error: %v", err)
 	}
 
-	err = tx.Where("block_number > ?", height).Delete(&models.StakeV2Revert{}).Error
+	//err = tx.Where("block_number > ?", height).Delete(&models.StakeV2Revert{}).Error
+	//if err != nil {
+	//	return fmt.Errorf("StakeV2Revert error: %v", err)
+	//}
+	//
+	//err = tx.Where("block_number > ?", height).Delete(&models.CrossRevert{}).Error
+	//if err != nil {
+	//	return fmt.Errorf("CrossRevert error: %v", err)
+	//}
+
+	return nil
+}
+
+func (e *Explorer) UpdateLiquidity(tx *gorm.DB) error {
+
+	err := tx.Exec(`UPDATE swap_liquidity
+				SET amt0 = (
+					SELECT b.amt_sum
+					FROM drc20_collect_address b
+					WHERE 
+						swap_liquidity.tick0 = b.tick AND 
+						swap_liquidity.reserves_address = b.holder_address
+				)
+				WHERE EXISTS (
+					SELECT 1
+					FROM drc20_collect_address b
+					WHERE 
+						swap_liquidity.tick0 = b.tick AND 
+						swap_liquidity.reserves_address = b.holder_address 
+				)`).Error
 	if err != nil {
-		return fmt.Errorf("StakeV2Revert error: %v", err)
+		return fmt.Errorf("UpdateLiquidity error: %s", err.Error())
 	}
 
-	err = tx.Where("block_number > ?", height).Delete(&models.CrossRevert{}).Error
+	err = tx.Exec(` UPDATE swap_liquidity
+				SET amt1 = (
+					SELECT b.amt_sum
+					FROM drc20_collect_address b
+					WHERE 
+						swap_liquidity.tick1 = b.tick AND 
+						swap_liquidity.reserves_address = b.holder_address
+				)
+				WHERE EXISTS (
+					SELECT 1
+					FROM drc20_collect_address b
+					WHERE 
+						swap_liquidity.tick1 = b.tick AND 
+						swap_liquidity.reserves_address = b.holder_address 
+				)`).Error
 	if err != nil {
-		return fmt.Errorf("CrossRevert error: %v", err)
+		return err
+	}
+
+	err = tx.Exec(`UPDATE swap_liquidity
+				SET liquidity_total = (
+					SELECT b.amt_sum
+					FROM drc20_collect b
+					WHERE swap_liquidity.tick = b.tick
+				)`).Error
+	if err != nil {
+		return err
 	}
 
 	return nil

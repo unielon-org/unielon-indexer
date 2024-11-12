@@ -98,6 +98,7 @@ func (r *ExchangeRouter) Order(c *gin.Context) {
 		Tick0         string `json:"tick0"`
 		Tick1         string `json:"tick1"`
 		HolderAddress string `json:"holder_address"`
+		TxHash        string `json:"tx_hash"`
 		BlockNumber   int64  `json:"block_number"`
 		Limit         int    `json:"limit"`
 		OffSet        int    `json:"offset"`
@@ -123,6 +124,7 @@ func (r *ExchangeRouter) Order(c *gin.Context) {
 		Tick0:         p.Tick0,
 		Tick1:         p.Tick1,
 		HolderAddress: p.HolderAddress,
+		TxHash:        p.TxHash,
 		BlockNumber:   p.BlockNumber,
 	}
 

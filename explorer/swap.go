@@ -169,7 +169,7 @@ func (e *Explorer) swapAdd(db *gorm.DB, swap *models.SwapInfo) error {
 
 	err := e.dbc.SwapAdd(db, swap)
 	if err != nil {
-		return fmt.Errorf("swapCreate Create err: %s", err.Error())
+		return fmt.Errorf("swapAdd Add err: %s", err.Error())
 	}
 
 	update := map[string]interface{}{"order_status": 0, "amt0_out": swap.Amt0Out.String(), "amt1_out": swap.Amt1Out.String(), "liquidity": swap.Liquidity.String()}
