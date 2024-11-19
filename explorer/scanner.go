@@ -588,6 +588,7 @@ func (e *Explorer) executePairV1(swaps []*models.SwapInfo) error {
 	}
 
 	if dogeDepositAmt.Cmp(big.NewInt(0)) > 0 {
+		dbtxw := e.dbc.DB.Begin()
 		wdoge := &models.WDogeInfo{}
 		wdoge.OrderId = uuid.New().String()
 		wdoge.Op = "deposit-swap"
@@ -597,11 +598,13 @@ func (e *Explorer) executePairV1(swaps []*models.SwapInfo) error {
 		wdoge.TxHash = swaps[0].TxHash
 		wdoge.BlockHash = swaps[0].BlockHash
 		wdoge.BlockNumber = swaps[0].BlockNumber
-		err := e.wdogeDepositSwap(dbtx, wdoge)
+		err := e.wdogeDepositSwap(dbtxw, wdoge)
 		if err != nil {
-			dbtx.Rollback()
+			dbtxw.Rollback()
 			return fmt.Errorf("wdogeDepositSwap err: %s", err.Error())
 		}
+
+		dbtxw.Commit()
 	}
 
 	for _, swap := range swaps {
