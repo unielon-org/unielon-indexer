@@ -550,8 +550,6 @@ func (e *Explorer) executeBoxV1(box *models.BoxInfo) error {
 
 func (e *Explorer) executePairV1(swaps []*models.SwapInfo) error {
 
-	dbtx := e.dbc.DB.Begin()
-
 	dogeDepositAmt := big.NewInt(0)
 	dogeWithdrawAmt := big.NewInt(0)
 
@@ -606,6 +604,8 @@ func (e *Explorer) executePairV1(swaps []*models.SwapInfo) error {
 
 		dbtxw.Commit()
 	}
+
+	dbtx := e.dbc.DB.Begin()
 
 	for _, swap := range swaps {
 
