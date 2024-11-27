@@ -256,6 +256,27 @@ func (c *MysqlClient) FindSwapInfo(orderId, op, tick, tick0, tick1, holder_addre
 		swap.Amt1Min, _ = utils.ConvetStr(amt1min)
 		swap.Amt0Out, _ = utils.ConvetStr(amt0out)
 		swap.Amt1Out, _ = utils.ConvetStr(amt1out)
+
+		tm, err := time.Parse(time.RFC3339, swap.CreateDate)
+		if err != nil {
+			tm, err = time.Parse(time.RFC3339Nano, swap.CreateDate)
+			if err != nil {
+				return nil, 0, err
+			}
+		}
+
+		swap.CreateDate = tm.Format("2006-01-02 15:04:05")
+
+		tm1, err := time.Parse(time.RFC3339, swap.UpdateDate)
+		if err != nil {
+			tm1, err = time.Parse(time.RFC3339Nano, swap.UpdateDate)
+			if err != nil {
+				return nil, 0, err
+			}
+		}
+
+		swap.UpdateDate = tm1.Format("2006-01-02 15:04:05")
+
 		swaps = append(swaps, swap)
 	}
 
