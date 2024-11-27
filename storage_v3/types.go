@@ -130,8 +130,8 @@ type SwapInfo struct {
 	SwapBlockHash   string   `json:"swap_block_hash"`
 	OrderStatus     int64    `json:"order_status"`
 	ErrInfo         string   `json:"err_info"`
-	UpdateDate      int64    `json:"update_date"`
-	CreateDate      int64    `json:"create_date"`
+	UpdateDate      string   `json:"update_date"`
+	CreateDate      string   `json:"create_date"`
 }
 
 type SwapPrice struct {
