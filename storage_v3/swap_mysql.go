@@ -183,7 +183,7 @@ func (c *MysqlClient) FindSwapInfoVolumeAll() (map[string]float64, error) {
 	return volumeMap, nil
 }
 
-func (c *MysqlClient) FindSwapInfo(orderId, op, tick, tick0, tick1, holder_address string, limit, offset int64) ([]*models.SwapInfo, int64, error) {
+func (c *MysqlClient) FindSwapInfo(orderId, op, tick, tick0, tick1, holder_address string, limit, offset int64) ([]*SwapInfo, int64, error) {
 	query := "SELECT  order_id, op, tick0, tick1, amt0, amt1, amt0_min, amt1_min, amt0_out, amt1_out, fee_tx_hash, tx_hash, block_hash, block_number, fee_address, holder_address, order_status, update_date, create_date   FROM swap_info  "
 
 	where := "where"
@@ -241,21 +241,21 @@ func (c *MysqlClient) FindSwapInfo(orderId, op, tick, tick0, tick1, holder_addre
 	}
 
 	defer rows.Close()
-	swaps := make([]*models.SwapInfo, 0)
+	swaps := make([]*SwapInfo, 0)
 	for rows.Next() {
-		swap := &models.SwapInfo{}
+		swap := &SwapInfo{}
 		var amt0, amt1, amt0min, amt1min, amt0out, amt1out string
-		err := rows.Scan(&swap.OrderId, &swap.Op, &swap.Tick0, &swap.Tick1, &amt0, &amt1, &amt0min, &amt1min, &amt0out, &amt1out, &swap.FeeTxHash, &swap.TxHash, &swap.BlockHash, &swap.BlockNumber, &swap.FeeAddress, &swap.HolderAddress, &swap.OrderStatus, &swap.UpdateDate, &swap.CreateDate)
+		err := rows.Scan(&swap.OrderId, &swap.Op, &swap.Tick0, &swap.Tick1, &amt0, &amt1, &amt0min, &amt1min, &amt0out, &amt1out, &swap.FeeTxHash, &swap.SwapTxHash, &swap.SwapBlockHash, &swap.SwapBlockNumber, &swap.FeeAddress, &swap.HolderAddress, &swap.OrderStatus, &swap.UpdateDate, &swap.CreateDate)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		swap.Amt0, _ = utils.ConvetStringToNumber(amt0)
-		swap.Amt1, _ = utils.ConvetStringToNumber(amt1)
-		swap.Amt0Min, _ = utils.ConvetStringToNumber(amt0min)
-		swap.Amt1Min, _ = utils.ConvetStringToNumber(amt1min)
-		swap.Amt0Out, _ = utils.ConvetStringToNumber(amt0out)
-		swap.Amt1Out, _ = utils.ConvetStringToNumber(amt1out)
+		swap.Amt0, _ = utils.ConvetStr(amt0)
+		swap.Amt1, _ = utils.ConvetStr(amt1)
+		swap.Amt0Min, _ = utils.ConvetStr(amt0min)
+		swap.Amt1Min, _ = utils.ConvetStr(amt1min)
+		swap.Amt0Out, _ = utils.ConvetStr(amt0out)
+		swap.Amt1Out, _ = utils.ConvetStr(amt1out)
 		swaps = append(swaps, swap)
 	}
 

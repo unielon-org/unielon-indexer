@@ -106,6 +106,34 @@ type OrderResult struct {
 	CreateDate         string   `json:"create_date"`
 }
 
+type SwapInfo struct {
+	ID              uint     `gorm:"primarykey" json:"id"`
+	OrderId         string   `json:"order_id"`
+	Op              string   `json:"op"`
+	Tick            string   `json:"tick"`
+	Tick0           string   `json:"tick0"`
+	Tick1           string   `json:"tick1"`
+	Amt0            *big.Int `json:"amt0"`
+	Amt1            *big.Int `json:"amt1"`
+	Amt0Min         *big.Int `json:"amt0_min"`
+	Amt1Min         *big.Int `json:"amt1_min"`
+	Amt0Out         *big.Int `json:"amt0_out"`
+	Amt1Out         *big.Int `json:"amt1_out"`
+	Liquidity       *big.Int `json:"liquidity"`
+	Doge            int      `json:"doge"`
+	HolderAddress   string   `json:"holder_address"`
+	FeeAddress      string   `json:"fee_address"`
+	FeeTxHash       string   `json:"fee_tx_hash"`
+	FeeTxIndex      uint32   `json:"fee_tx_index"`
+	SwapTxHash      string   `json:"swap_tx_hash"`
+	SwapBlockNumber int64    `json:"swap_block_number"`
+	SwapBlockHash   string   `json:"swap_block_hash"`
+	OrderStatus     int64    `json:"order_status"`
+	ErrInfo         string   `json:"err_info"`
+	UpdateDate      int64    `json:"update_date"`
+	CreateDate      int64    `json:"create_date"`
+}
+
 type SwapPrice struct {
 	Tick      string  `json:"tick"`
 	LastPrice float64 `json:"last_price"`
