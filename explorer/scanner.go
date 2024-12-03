@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	startInterval    = 3 * time.Second
+	startInterval = 3 * time.Second
+
 	wdogeFeeAddress  = "D86Dc4n49LZDiXvB41ds2XaDAP1BFjP1qy"
 	wdogeCoolAddress = "DKMyk8cfSTGfnCVXfmo8gXta9F6gziu7Z5"
 	nftFeeAddress    = "DBFQmJ5oGCgtnDVxUU7xEraztpEyqJHdxz"
@@ -176,19 +177,6 @@ func (e *Explorer) scan() error {
 					continue
 				}
 
-			//case "nft/ai":
-			//	nft, err := e.nftDecode(txv, e.currentHeight)
-			//	if err != nil {
-			//		log.Error("scanning", "nftDecode", err, "txhash", txv.Txid)
-			//		continue
-			//	}
-			//
-			//	err = e.executeNft(nft)
-			//	if err != nil {
-			//		e.dbc.DB.Model(&models.NftInfo{}).Where("tx_hash = ?", nft.TxHash).Update("err_info", err.Error())
-			//		continue
-			//	}
-
 			case "file":
 				file, err := e.fileDecode(txv, e.currentHeight)
 				if err != nil {
@@ -214,19 +202,6 @@ func (e *Explorer) scan() error {
 					e.dbc.DB.Model(&models.StakeInfo{}).Where("tx_hash = ?", stake.TxHash).Update("err_info", err.Error())
 					continue
 				}
-
-			//case "stake-v2":
-			//	stake, err := e.stakeV2Decode(txv, pushedData, e.currentHeight)
-			//	if err != nil {
-			//		log.Error("scanning", "stakeDecode", err, "txhash", txv.Txid)
-			//		continue
-			//	}
-			//
-			//	err = e.executeStakeV2(stake)
-			//	if err != nil {
-			//		e.dbc.DB.Model(&models.StakeV2Info{}).Where("tx_hash = ?", stake.TxHash).Update("err_info", err.Error())
-			//		continue
-			//	}
 
 			case "order-v1":
 				ex, err := e.exchangeDecode(txv, pushedData, e.currentHeight)
@@ -264,6 +239,20 @@ func (e *Explorer) scan() error {
 				err = e.executeBoxV1(box)
 				if err != nil {
 					e.dbc.DB.Model(&models.BoxInfo{}).Where("tx_hash = ?", box.TxHash).Update("err_info", err.Error())
+					continue
+				}
+
+			case "cross":
+
+				cross, err := e.crossDecode(txv, pushedData, e.currentHeight)
+				if err != nil {
+					log.Error("scanning", "crossDecode", err, "txhash", txv.Txid)
+					continue
+				}
+
+				err = e.executeCross(cross)
+				if err != nil {
+					e.dbc.DB.Model(&models.CrossInfo{}).Where("tx_hash = ?", cross.TxHash).Update("err_info", err.Error())
 					continue
 				}
 
@@ -420,44 +409,6 @@ func (e *Explorer) executeStakeV1(stake *models.StakeInfo) error {
 		err = e.stakeGetAllReward(stake)
 		if err != nil {
 			return fmt.Errorf("stakeGetAllReward err: %s", err.Error())
-		}
-	}
-
-	return nil
-}
-
-func (e *Explorer) executeStakeV2(stake *models.StakeV2Info) error {
-
-	err := e.verify.VerifyStakeV2(stake)
-	if err != nil {
-		return fmt.Errorf("VerifyStakeV2 err: %s", err.Error())
-	}
-
-	if stake.Op == "deploy" {
-		err = e.stakeV2Deploy(stake)
-		if err != nil {
-			return fmt.Errorf("stakeV2Create err: %s", err.Error())
-		}
-	}
-
-	if stake.Op == "stake" {
-		err = e.stakeV2Stake(stake)
-		if err != nil {
-			return fmt.Errorf("stakeV2Stake err: %s", err.Error())
-		}
-	}
-
-	if stake.Op == "unstake" {
-		err = e.stakeV2UnStake(stake)
-		if err != nil {
-			return fmt.Errorf("stakeV2UnStake err: %s", err.Error())
-		}
-	}
-
-	if stake.Op == "getreward" {
-		err = e.stakeV2GetReward(stake)
-		if err != nil {
-			return fmt.Errorf("stakeV2GetReward err: %s", err.Error())
 		}
 	}
 
@@ -682,6 +633,37 @@ func (e *Explorer) executePairV1(swaps []*models.SwapInfo) error {
 	if err := dbtx.Commit().Error; err != nil {
 		dbtx.Rollback()
 		return fmt.Errorf("swapCommit err: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (e *Explorer) executeCross(cross *models.CrossInfo) error {
+
+	err := e.verify.VerifyCross(cross)
+	if err != nil {
+		return fmt.Errorf("VerifyCross err: %s", err.Error())
+	}
+
+	if cross.Op == "deploy" {
+		err = e.crossDeploy(cross)
+		if err != nil {
+			return fmt.Errorf("crossDeploy err: %s", err.Error())
+		}
+	}
+
+	if cross.Op == "mint" {
+		err = e.crossMint(cross)
+		if err != nil {
+			return fmt.Errorf("crossMint err: %s", err.Error())
+		}
+	}
+
+	if cross.Op == "burn" {
+		err = e.crossBurn(cross)
+		if err != nil {
+			return fmt.Errorf("crossBurn err: %s", err.Error())
+		}
 	}
 
 	return nil

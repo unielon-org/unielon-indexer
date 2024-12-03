@@ -297,7 +297,6 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 
 	log.Info("fork", "box", height)
 	// box
-
 	err = tx.Exec("update box_collect a, drc20_collect_address b set a.liqamt_finish = b.amt_sum where a.tick1 = b.tick and a.reserves_address = b.holder_address").Error
 	if err != nil {
 		return fmt.Errorf("update box_collect error: %v", err)
@@ -496,31 +495,30 @@ func (e *Explorer) fork(tx *gorm.DB, height int64) error {
 	//	}
 	//}
 
-	// cross
-	//var crossReverts []*models.CrossRevert
-	//err = tx.Model(&models.CrossRevert{}).
-	//	Where("block_number > ?", height).
-	//	Order("id desc").
-	//	Find(&crossReverts).Error
-	//if err != nil {
-	//	return fmt.Errorf("FindCrossRevert error: %v", err)
-	//}
-	//
-	//for _, revert := range crossReverts {
-	//	if revert.Op == "deploy" {
-	//
-	//		err = tx.Where("tick = ?", revert.Tick).Delete(&models.CrossCollect{}).Error
-	//		if err != nil {
-	//			return fmt.Errorf("CrossCollect error: %v", err)
-	//		}
-	//
-	//
-	//		err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
-	//		if err != nil {
-	//			return fmt.Errorf("Drc20Collect error: %v", err)
-	//		}
-	//	}
-	//}
+	//cross
+	var crossReverts []*models.CrossRevert
+	err = tx.Model(&models.CrossRevert{}).
+		Where("block_number > ?", height).
+		Order("id desc").
+		Find(&crossReverts).Error
+	if err != nil {
+		return fmt.Errorf("FindCrossRevert error: %v", err)
+	}
+
+	for _, revert := range crossReverts {
+		if revert.Op == "deploy" {
+
+			err = tx.Where("tick = ?", revert.Tick).Delete(&models.CrossCollect{}).Error
+			if err != nil {
+				return fmt.Errorf("CrossCollect error: %v", err)
+			}
+
+			err = tx.Where("tick = ?", revert.Tick).Delete(&models.Drc20Collect{}).Error
+			if err != nil {
+				return fmt.Errorf("Drc20Collect error: %v", err)
+			}
+		}
+	}
 
 	err = e.delRevert(tx, height)
 	if err != nil {
@@ -594,11 +592,11 @@ func (e *Explorer) delInfo(tx *gorm.DB, height int64) error {
 	//if err != nil {
 	//	return fmt.Errorf("StakeV2Info error: %v", err)
 	//}
-	//
-	//err = tx.Where("block_number > ?", height).Delete(&models.CrossInfo{}).Error
-	//if err != nil {
-	//	return fmt.Errorf("CrossInfo error: %v", err)
-	//}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.CrossInfo{}).Error
+	if err != nil {
+		return fmt.Errorf("CrossInfo error: %v", err)
+	}
 
 	return nil
 
@@ -640,11 +638,11 @@ func (e *Explorer) delRevert(tx *gorm.DB, height int64) error {
 	//if err != nil {
 	//	return fmt.Errorf("StakeV2Revert error: %v", err)
 	//}
-	//
-	//err = tx.Where("block_number > ?", height).Delete(&models.CrossRevert{}).Error
-	//if err != nil {
-	//	return fmt.Errorf("CrossRevert error: %v", err)
-	//}
+
+	err = tx.Where("block_number > ?", height).Delete(&models.CrossRevert{}).Error
+	if err != nil {
+		return fmt.Errorf("CrossRevert error: %v", err)
+	}
 
 	return nil
 }

@@ -19,6 +19,7 @@ type BoxInfo struct {
 	BlockHash     string    `json:"block_hash"`
 	HolderAddress string    `json:"holder_address"`
 	OrderStatus   int64     `json:"order_status"`
+	ErrInfo       string    `json:"err_info"`
 	CreateDate    LocalTime `json:"create_date"`
 	UpdateDate    LocalTime `json:"update_date"`
 }

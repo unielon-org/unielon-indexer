@@ -13,7 +13,7 @@ import (
 
 var (
 	Number0            = big.NewInt(0)
-	maxAllowedValue, _ = big.NewInt(0).SetString("ffffffffffffffffffffffffffffffffffffffff", 16)
+	maxAllowedValue, _ = big.NewInt(0).SetString("99999999999999999999999999999999999999999", 10)
 )
 
 type Verifys struct {
@@ -50,7 +50,7 @@ func (v *Verifys) verifyDeploy(card *models.Drc20Info) error {
 	}
 
 	if card.Max.Int().Cmp(maxAllowedValue) > 0 || card.Lim.Int().Cmp(maxAllowedValue) > 0 {
-		return fmt.Errorf("the maximum value cannot be greater 0xffffffffffffffffffffffffffffffffffffffff")
+		return fmt.Errorf("the maximum value cannot be greater 99999999999999999999999999999999999999999")
 	}
 
 	if card.Max.Cmp(card.Lim) < 0 {
@@ -265,7 +265,6 @@ func (v *Verifys) verifySwapExec(tx *gorm.DB, swap *models.SwapInfo) error {
 	swapLiquidity := &models.SwapLiquidity{}
 	err := tx.Where("tick0 = ? and tick1 = ?", tick0, tick1).First(swapLiquidity).Error
 	if err != nil {
-		println(tick0, tick1)
 		return fmt.Errorf("the contract does not exist err %s", err.Error())
 	}
 
@@ -899,12 +898,8 @@ func (v *Verifys) VerifyCrossDeploy(cross *models.CrossInfo) error {
 	card := &models.Drc20Collect{}
 	tick := "W" + cross.Tick + "(WRAPPED-" + cross.Tick + ")"
 	err := v.dbc.DB.Where("tick = ? ", tick).First(card).Error
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
-	}
-
-	if card != nil {
-		return fmt.Errorf("the contract exist err %s", err.Error())
 	}
 
 	return nil

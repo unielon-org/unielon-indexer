@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/unielon-org/unielon-indexer/models"
+	"github.com/unielon-org/unielon-indexer/utils"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +12,7 @@ func (c *DBClient) CrossDeploy(tx *gorm.DB, cross *models.CrossInfo) error {
 	tick := "W" + cross.Tick + "(WRAPPED-" + cross.Tick + ")"
 	drc20c := &models.Drc20Collect{
 		Tick:          tick,
-		Max:           models.NewNumber(-1),
+		Max:           (*models.Number)(utils.MAX_NUMBER),
 		Dec:           8,
 		HolderAddress: cross.HolderAddress,
 		TxHash:        cross.TxHash,
@@ -23,7 +24,7 @@ func (c *DBClient) CrossDeploy(tx *gorm.DB, cross *models.CrossInfo) error {
 	}
 
 	cc := &models.CrossCollect{
-		Tick:          cross.Tick,
+		Tick:          tick,
 		AdminAddress:  cross.AdminAddress,
 		HolderAddress: cross.HolderAddress,
 	}
@@ -35,7 +36,7 @@ func (c *DBClient) CrossDeploy(tx *gorm.DB, cross *models.CrossInfo) error {
 
 	revert := &models.CrossRevert{
 		Op:          "deploy",
-		Tick:        cross.Tick,
+		Tick:        tick,
 		BlockNumber: cross.BlockNumber,
 	}
 

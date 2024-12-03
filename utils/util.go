@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+var (
+	MAX_NUMBER, _ = big.NewInt(0).SetString("99999999999999999999999999999999999999999", 10)
+)
+
 func ConvetStr(number string) (*big.Int, error) {
 	if number != "" {
 		max_big, is_ok := new(big.Int).SetString(number, 10)

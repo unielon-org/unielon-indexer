@@ -16,7 +16,7 @@ func (e Explorer) crossDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 
 	err := e.dbc.DB.Where("tx_hash = ?", tx.Txid).First(&models.CrossInfo{}).Error
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("wdoge already exist or err %s", tx.Txid)
+		return nil, fmt.Errorf("cross already exist or err %s", tx.Txid)
 	}
 
 	param := &models.CrossInscription{}
@@ -50,8 +50,21 @@ func (e Explorer) crossDecode(tx *btcjson.TxRawResult, pushedData []byte, number
 		return nil, CHAIN_NETWORK_ERR
 	}
 
-	if cross.HolderAddress != txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0] {
-		return nil, fmt.Errorf("the address is not the same as the previous transaction")
+	if cross.Op == "mint" {
+
+		txhash1, _ := chainhash.NewHashFromStr(txRawResult0.Vin[0].Txid)
+		txRawResult1, err := e.node.GetRawTransactionVerboseBool(txhash1)
+		if err != nil {
+			return nil, fmt.Errorf("GetRawTransactionVerboseBool err: %s", err.Error())
+		}
+
+		cross.HolderAddress = txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0]
+
+	} else {
+		if cross.HolderAddress != txRawResult1.Vout[txRawResult0.Vin[0].Vout].ScriptPubKey.Addresses[0] {
+			return nil, fmt.Errorf("the address is not the same as the previous transaction")
+		}
+
 	}
 
 	err = e.dbc.DB.Create(cross).Error

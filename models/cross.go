@@ -51,3 +51,29 @@ type CrossRevert struct {
 func (CrossRevert) TableName() string {
 	return "cross_revert"
 }
+
+type CrossBotInfo struct {
+	ID              uint      `gorm:"primarykey" json:"id"`
+	Amt             *Number   `json:"amt"`
+	FromChain       string    `json:"from_chain"`
+	FromToken       string    `json:"from_token"`
+	FromAddress     string    `json:"from_address"`
+	FromTxHash      string    `json:"from_tx_hash"`
+	FromBlockNumber int64     `json:"from_block_number"`
+	FromBlockHash   string    `json:"from_block_hash"`
+	ToChain         string    `json:"to_chain"`
+	ToToken         string    `json:"to_token"`
+	ToAddress       string    `json:"to_address"`
+	ToTxHash        string    `json:"to_tx_hash"`
+	ToTxIndex       int64     `json:"to_tx_index"`
+	ToBlockNumber   int64     `json:"to_block_number"`
+	ToBlockHash     string    `json:"to_block_hash"`
+	ErrInfo         string    `json:"err_info"`
+	OrderStatus     int64     `json:"order_status"`
+	UpdateDate      LocalTime `json:"update_date"`
+	CreateDate      LocalTime `json:"create_date"`
+}
+
+func (CrossBotInfo) TableName() string {
+	return "cross_bot_info"
+}
