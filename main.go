@@ -236,6 +236,10 @@ func main() {
 			v4.POST("/file-exchange/summary/nft/all", fileExchangeRouter.SummaryAll)
 			v4.POST("/file-exchange/inscriptions", fileExchangeRouter.Inscriptions)
 
+			// cross
+			crossRouter := router.NewCrossRouter(dbClient, rpcClient, verify)
+			v4.POST("/cross/order", crossRouter.Order)
+			v4.POST("/cross/collect", crossRouter.Collect)
 		}
 
 		err := grt.Run(cfg.HttpServer.Server)
