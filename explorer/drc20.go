@@ -10,6 +10,7 @@ import (
 	"github.com/unielon-org/unielon-indexer/models"
 	"github.com/unielon-org/unielon-indexer/utils"
 	"gorm.io/gorm"
+	"math/big"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func (e *Explorer) drc20Decode(tx *btcjson.TxRawResult, pushedData []byte, numbe
 	if card.Op == "mint" {
 
 		card.HolderAddress = tx.Vout[0].ScriptPubKey.Addresses[0]
-		card.Repeat = uint(tx.Vout[0].Value / 0.001)
+		card.Repeat = int64(tx.Vout[0].Value / 0.001)
 		if card.Repeat > 30 {
 			card.Repeat = 30
 		}
@@ -136,7 +137,8 @@ func (e Explorer) drc20Deploy(drc20 *models.Drc20Info) error {
 func (e *Explorer) drc20Mint(drc20 *models.Drc20Info) error {
 	tx := e.dbc.DB.Begin()
 
-	err := e.dbc.MintDrc20(tx, drc20.Tick, drc20.HolderAddress, drc20.Amt.Int(), drc20.TxHash, drc20.BlockNumber, false)
+	amount := big.NewInt(0).Mul(drc20.Amt.Int(), big.NewInt(drc20.Repeat))
+	err := e.dbc.MintDrc20(tx, drc20.Tick, drc20.HolderAddress, amount, drc20.TxHash, drc20.BlockNumber, false)
 	if err != nil {
 		tx.Rollback()
 		return err

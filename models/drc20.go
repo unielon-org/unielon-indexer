@@ -14,7 +14,7 @@ type Drc20Info struct {
 	Dec           uint      `gorm:"column:dec_" json:"dec"`
 	Burn          string    `gorm:"column:burn_" json:"burn"`
 	Func          string    `gorm:"column:func_" json:"func"`
-	Repeat        uint      `gorm:"column:repeat_mint" json:"repeat"`
+	Repeat        int64     `gorm:"column:repeat_mint" json:"repeat"`
 	HolderAddress string    `json:"holder_address"`
 	ToAddress     string    `json:"to_address"`
 	FeeAddress    string    `json:"fee_address"`
