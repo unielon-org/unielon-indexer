@@ -97,7 +97,7 @@ type OrderResult struct {
 	BlockHash          string   `json:"block_hash"`
 	BlockNumber        int64    `json:"block_number"`
 	BlockConfirmations uint64   `json:"block_confirmations"`
-	Drc20Inscription   string   `json:"drc20_inscription"`
+	Drc20Inscription   *string  `json:"drc20_inscription"`
 	Inscription        string   `json:"inscription"`
 	ReceiveAddress     string   `json:"receive_address"`
 	ToAddress          string   `json:"to_address"`

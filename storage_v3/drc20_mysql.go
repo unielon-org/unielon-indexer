@@ -853,7 +853,14 @@ FROM drc20_info ci left join drc20_collect di on ci.tick = di.tick
 		card.Amt, _ = utils.ConvetStr(*amt)
 		card.Lim, _ = utils.ConvetStr(*lim)
 		card.Inscription = card.Drc20TxHash + "i0"
-		card.Drc20Inscription = card.Drc20Inscription + "i0"
+
+		inscription := "i0"
+		if card.Drc20Inscription == nil {
+			card.Drc20Inscription = &inscription
+		} else {
+			drc20Inscription := *card.Drc20Inscription + inscription
+			card.Drc20Inscription = &drc20Inscription
+		}
 
 		tm, err := time.Parse(time.RFC3339, card.CreateDate)
 		if err != nil {
